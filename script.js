@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -49,10 +49,22 @@ var investAffected = " ([\\(\\),SDWD ]*)?";
 
 function parseAbilities(trigger) {
 	for(let a in trigger[1]) {
-		let abilityLine = trigger[1][a];
+    let abilityLineSplit = trigger[1][a].split(/ \[| \{| ⟨/);
 		let ability = null;
 		let exp, found;
-		
+        
+        let abilityLine = abilityLineSplit.shift();
+        let abilityValues = trigger[1][a].split(abilityLine)[1];
+        console.log("VALUES: ", abilityValues);
+        
+        /** KILLING **/
+		exp = new RegExp("(Kill|Attack|Lynch|True Kill) " + targetType, "g");
+		found = exp.exec(abilityLine);
+		if(found) {
+			ability = { type: "killing", subtype: found[1].toLowerCase(), target: found[2] };
+		}
+		found = null;
+        /** INVESTIGATION **/
 		// Role/align/cat/class Invest
 		exp = new RegExp("(Role|Alignment|Category|Class) Investigate " + targetType + investAffected, "g");
 		found = exp.exec(abilityLine);
@@ -74,7 +86,9 @@ function parseAbilities(trigger) {
 			ability = { type: "investigation", subtype: "count", target: found[1], ...parseInvestAffected(found[2]) };
 		}
 		found = null;
-		
+        
+        
+		/** Ability Types End */
 		if(ability) {
 			console.log("IDENT", ability);
 			trigger[1][a] = ability;
