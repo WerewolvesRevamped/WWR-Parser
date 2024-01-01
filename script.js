@@ -29,16 +29,16 @@ let bullets = ["•","‣","◦","·","⁃","⹀"];
 
 
 function parseRole(inputLines) {
-	console.log("PARSE TRIGGERS");
-	let triggers = parseTriggers(inputLines);
-	
-	console.log("PARSE ABILITIES")
-	for(let t in triggers.triggers) {
-		let abilities = parseAbilities(triggers.triggers[t]);
-		triggers.triggers[t] = abilities;
-	}
-	
-	return triggers;
+    console.log("PARSE TRIGGERS");
+    let triggers = parseTriggers(inputLines);
+    
+    console.log("PARSE ABILITIES")
+    for(let t in triggers.triggers) {
+        let abilities = parseAbilities(triggers.triggers[t]);
+        triggers.triggers[t] = abilities;
+    }
+    
+    return triggers;
 }
 
 // general
@@ -48,116 +48,116 @@ var targetType = "(`[^`]*`|@\\S*)";
 var investAffected = " ([\\(\\),SDWD ]*)?";
 
 function parseAbilities(trigger) {
-	for(let a in trigger[1]) {
+    for(let a in trigger[1]) {
     let abilityLineSplit = trigger[1][a].split(/ \[| \{| ⟨/);
-		let ability = null;
-		let exp, found;
+        let ability = null;
+        let exp, found;
         
         let abilityLine = abilityLineSplit.shift();
         let abilityValues = trigger[1][a].split(abilityLine)[1];
         console.log("VALUES: ", abilityValues);
         
         /** KILLING **/
-		exp = new RegExp("(Kill|Attack|Lynch|True Kill) " + targetType, "g");
-		found = exp.exec(abilityLine);
-		if(found) {
-			ability = { type: "killing", subtype: found[1].toLowerCase(), target: found[2] };
-		}
-		found = null;
+        exp = new RegExp("(Kill|Attack|Lynch|True Kill) " + targetType, "g");
+        found = exp.exec(abilityLine);
+        if(found) {
+            ability = { type: "killing", subtype: found[1].toLowerCase(), target: found[2] };
+        }
+        found = null;
         /** INVESTIGATION **/
-		// Role/align/cat/class Invest
-		exp = new RegExp("(Role|Alignment|Category|Class) Investigate " + targetType + investAffected, "g");
-		found = exp.exec(abilityLine);
-		if(found) {
-			ability = { type: "investigation", subtype: found[1].toLowerCase(), target: found[2], ...parseInvestAffected(found[3]) };
-		}
-		found = null;
-		// Attribute invest
-		exp = new RegExp("Attribute Investigate " + targetType + " for " + targetType + investAffected, "g");
-		found = exp.exec(abilityLine);
-		if(found) {
-			ability = { type: "investigation", subtype: "attribute", target: found[1], attribute: found[2], ...parseInvestAffected(found[3]) };
-		}
-		found = null;
-		// Role Count invest
-		exp = new RegExp("Investigate " + targetType + " Count" + investAffected, "g");
-		found = exp.exec(abilityLine);
-		if(found) {
-			ability = { type: "investigation", subtype: "count", target: found[1], ...parseInvestAffected(found[2]) };
-		}
-		found = null;
+        // Role/align/cat/class Invest
+        exp = new RegExp("(Role|Alignment|Category|Class) Investigate " + targetType + investAffected, "g");
+        found = exp.exec(abilityLine);
+        if(found) {
+            ability = { type: "investigation", subtype: found[1].toLowerCase(), target: found[2], ...parseInvestAffected(found[3]) };
+        }
+        found = null;
+        // Attribute invest
+        exp = new RegExp("Attribute Investigate " + targetType + " for " + targetType + investAffected, "g");
+        found = exp.exec(abilityLine);
+        if(found) {
+            ability = { type: "investigation", subtype: "attribute", target: found[1], attribute: found[2], ...parseInvestAffected(found[3]) };
+        }
+        found = null;
+        // Role Count invest
+        exp = new RegExp("Investigate " + targetType + " Count" + investAffected, "g");
+        found = exp.exec(abilityLine);
+        if(found) {
+            ability = { type: "investigation", subtype: "count", target: found[1], ...parseInvestAffected(found[2]) };
+        }
+        found = null;
         
         
-		/** Ability Types End */
-		if(ability) {
-			console.log("IDENT", ability);
-			trigger[1][a] = ability;
-		} else {
-			console.log("UNIDENT", abilityLine);
-		}
-	}
-	return trigger;
+        /** Ability Types End */
+        if(ability) {
+            console.log("IDENT", ability);
+            trigger[1][a] = ability;
+        } else {
+            console.log("UNIDENT", abilityLine);
+        }
+    }
+    return trigger;
 }
 
 // parse the WD/SD affected element for invest abilities
 function parseInvestAffected(param) {
-	return { affected_by_wd: param.includes("WD"), affected_by_sd: param.includes("SD") };
+    return { affected_by_wd: param.includes("WD"), affected_by_sd: param.includes("SD") };
 }
 
 function parseTriggers(inputLines) {
 
-	let curTriggerType = null;
-	let curTrigger = [];
+    let curTriggerType = null;
+    let curTrigger = [];
     let unique = false;
 
-	while(inputLines.length > 0) {
-		let curInputLine = inputLines.shift().trim();
-		
-		// continue previous trigger
-		if(bullets.includes(curInputLine[0])) {
-			console.log("CONT: ", curInputLine);
-			curTrigger.push(curInputLine)
-		}
-		// start new trigger
-		else {
-			console.log("NEW: ", curInputLine);
-			// store previous trigger if existing
-			if(curTriggerType) {
-				triggers.push([curTriggerType, curTrigger]);
-			}
-			curTriggerType = null;
-			curTrigger = [];
-			
-			if(curInputLine === "No Abilities") { // No Abilities
-				// nothing - no abilities
-				continue;
-			} else if(curInputLine === "Unique Role") { // Unique Role
-				// set unique value to true
-				unique = true;
-				continue;
-			}
-			
-			let curInputLineSplit = curInputLine.split(": ");
-			let curTriggerName = curInputLineSplit.shift().split(":")[0];
-			
-			// basic trigger type
-			if(basicTriggerTypes.includes(curTriggerName)) {
-				curTriggerType = curTriggerName;
-				curTrigger.push(curInputLineSplit.join(": "));
-			} else {
-				console.log("UNIDENT");
-			}
-			
-			// TODO advanced trigger type
-		}  
-	}
+    while(inputLines.length > 0) {
+        let curInputLine = inputLines.shift().trim();
+        
+        // continue previous trigger
+        if(bullets.includes(curInputLine[0])) {
+            console.log("CONT: ", curInputLine);
+            curTrigger.push(curInputLine)
+        }
+        // start new trigger
+        else {
+            console.log("NEW: ", curInputLine);
+            // store previous trigger if existing
+            if(curTriggerType) {
+                triggers.push([curTriggerType, curTrigger]);
+            }
+            curTriggerType = null;
+            curTrigger = [];
+            
+            if(curInputLine === "No Abilities") { // No Abilities
+                // nothing - no abilities
+                continue;
+            } else if(curInputLine === "Unique Role") { // Unique Role
+                // set unique value to true
+                unique = true;
+                continue;
+            }
+            
+            let curInputLineSplit = curInputLine.split(": ");
+            let curTriggerName = curInputLineSplit.shift().split(":")[0];
+            
+            // basic trigger type
+            if(basicTriggerTypes.includes(curTriggerName)) {
+                curTriggerType = curTriggerName;
+                curTrigger.push(curInputLineSplit.join(": "));
+            } else {
+                console.log("UNIDENT");
+            }
+            
+            // TODO advanced trigger type
+        }  
+    }
 
 
-	// store final trigger
-	if(curTriggerType) {
-		triggers.push([curTriggerType, curTrigger]);
-	}
+    // store final trigger
+    if(curTriggerType) {
+        triggers.push([curTriggerType, curTrigger]);
+    }
 
-	return { triggers: triggers, unique: unique };
+    return { triggers: triggers, unique: unique };
 
 }
