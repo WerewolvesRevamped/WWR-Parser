@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -57,7 +57,7 @@ function parseAbilities(trigger) {
 		exp = new RegExp("(Role|Alignment|Category|Class) Investigate " + targetType + investAffected, "g");
 		found = exp.exec(abilityLine);
 		if(found) {
-			ability = { type: "investigation", subtype:found[1].toLowerCase(), target: found[2], ...parseInvestAffected(found[3]) };
+			ability = { type: "investigation", subtype: found[1].toLowerCase(), target: found[2], ...parseInvestAffected(found[3]) };
 		}
 		found = null;
 		// Attribute invest
@@ -65,6 +65,13 @@ function parseAbilities(trigger) {
 		found = exp.exec(abilityLine);
 		if(found) {
 			ability = { type: "investigation", subtype: "attribute", target: found[1], attribute: found[2], ...parseInvestAffected(found[3]) };
+		}
+		found = null;
+		// Role Count invest
+		exp = new RegExp("Investigate " + targetType + " Count" + investAffected, "g");
+		found = exp.exec(abilityLine);
+		if(found) {
+			ability = { type: "investigation", subtype: "count", target: found[1], ...parseInvestAffected(found[2]) };
 		}
 		found = null;
 		
@@ -80,7 +87,7 @@ function parseAbilities(trigger) {
 
 // parse the WD/SD affected element for invest abilities
 function parseInvestAffected(param) {
-	return { affected_by_wd: param.includes("WD"), affected_by_sd: param.includes("WD") };
+	return { affected_by_wd: param.includes("WD"), affected_by_sd: param.includes("SD") };
 }
 
 function parseTriggers(inputLines) {
