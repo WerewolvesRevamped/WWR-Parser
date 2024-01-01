@@ -86,6 +86,21 @@ function parseAbilities(trigger) {
             ability = { type: "investigation", subtype: "count", target: found[1], ...parseInvestAffected(found[2]) };
         }
         found = null;
+        /** TARGET **/
+        // target
+        exp = new RegExp("Target " + targetType, "g");
+        found = exp.exec(abilityLine);
+        if(found) {
+            ability = { type: "target", subtype: "target", target: found[1] };
+        }
+        found = null;
+        // untarget
+        exp = new RegExp("Untarget", "g");
+        found = exp.exec(abilityLine);
+        if(found) {
+            ability = { type: "target", subtype: "untarget", target: found[1] };
+        }
+        found = null;
         
         
         /** Ability Types End */
