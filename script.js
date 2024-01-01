@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nCompound:\n  • Immediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\n  • Afterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -45,15 +45,19 @@ function parseRole(inputLines) {
 // general
 var targetType = "(`[^`]*`|@\\S*)";
 var attrDuration = "( \\(~[^\)]+\\))?";
+var locationType = "(`[^`]*`|@\\S*|#\\S*)"; // extended version of target type
 
 // specific
 var investAffected = " ([\\(\\),SDWD ]*)?";
+var defenseAttackSubtypes = "(`Attacks`|`Kills`|`Lynches`|`Attacks & Lynches`|`All`)";
+var defenseSubtypes = "(Absence at " + locationType + "|Active Defense|Passive Defense|Partial Defense|Recruitment Defense)";
+var defensePhases = "(Day|Night)";
 
 function parseAbilities(trigger) {
     for(let a in trigger[1]) {
     let abilityLineSplit = trigger[1][a].split(/ \[| \{| ⟨/);
         let ability = null;
-        let exp, found;
+        let exp, fd;
         
         let abilityLine = abilityLineSplit.shift();
         let abilityValues = trigger[1][a].split(abilityLine)[1];
@@ -61,56 +65,100 @@ function parseAbilities(trigger) {
         
         /** KILLING **/
         exp = new RegExp("(Kill|Attack|Lynch|True Kill) " + targetType, "g");
-        found = exp.exec(abilityLine);
-        if(found) {
-            ability = { type: "killing", subtype: found[1].toLowerCase(), target: found[2] };
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "killing", subtype: lc(fd[1]), target: fd[2] };
         }
-        found = null;
+        fd = null;
         /** INVESTIGATION **/
         // Role/align/cat/class Invest
         exp = new RegExp("(Role|Alignment|Category|Class) Investigate " + targetType + investAffected, "g");
-        found = exp.exec(abilityLine);
-        if(found) {
-            ability = { type: "investigation", subtype: found[1].toLowerCase(), target: found[2], ...parseInvestAffected(found[3]) };
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "investigation", subtype: lc(fd[1]), target: fd[2], ...parseInvestAffected(fd[3]) };
         }
-        found = null;
+        fd = null;
         // Attribute invest
         exp = new RegExp("Attribute Investigate " + targetType + " for " + targetType + investAffected, "g");
-        found = exp.exec(abilityLine);
-        if(found) {
-            ability = { type: "investigation", subtype: "attribute", target: found[1], attribute: found[2], ...parseInvestAffected(found[3]) };
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "investigation", subtype: "attribute", target: fd[1], attribute: fd[2], ...parseInvestAffected(fd[3]) };
         }
-        found = null;
+        fd = null;
         // Role Count invest
         exp = new RegExp("Investigate " + targetType + " Count" + investAffected, "g");
-        found = exp.exec(abilityLine);
-        if(found) {
-            ability = { type: "investigation", subtype: "count", target: found[1], ...parseInvestAffected(found[2]) };
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "investigation", subtype: "count", target: fd[1], ...parseInvestAffected(fd[2]) };
         }
-        found = null;
+        fd = null;
         /** TARGET **/
         // target
         exp = new RegExp("Target " + targetType, "g");
-        found = exp.exec(abilityLine);
-        if(found) {
-            ability = { type: "targeting", subtype: "target", target: found[1] };
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "targeting", subtype: "target", target: fd[1] };
         }
-        found = null;
+        fd = null;
         // untarget
         exp = new RegExp("Untarget", "g");
-        found = exp.exec(abilityLine);
-        if(found) {
-            ability = { type: "targeting", subtype: "untarget", target: found[1] };
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "targeting", subtype: "untarget", target: fd[1] };
         }
-        found = null;
+        fd = null;
         /** DISGUISING **/
         exp = new RegExp("(Weakly|Strongly) Disguise " + targetType + " as " + targetType + attrDuration, "g");
-        found = exp.exec(abilityLine);
-        if(found) {
-            console.log("temp",found[4]);
-            ability = { type: "disguising", subtype: found[1].toLowerCase(), target: found[2], disguise: found[3], duration: dd(found[4], "permanent") };
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "disguising", subtype: lc(fd[1]), target: fd[2], disguise: fd[3], duration: dd(fd[4], "permanent") };
         }
-        found = null;
+        fd = null;
+        /** PROTECTING **/
+        // From By Through During
+        exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " by " + targetType + " through " + defenseSubtypes + " during " + defensePhases + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "protecting", subtype: lc(fd[4]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: fd[3], defense_during: fd[fd.length-2], duration: dd(fd[fd.length-1], "permanent") };
+            if(ability.subtype.substr(0,7)  == "absence") {
+                ability.subtype = "absence";
+                ability.absence_at = fd[5];
+            }
+        }
+        fd = null;
+        // From By Through
+        exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " by " + targetType + " through " + defenseSubtypes + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "protecting", subtype: lc(fd[4]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: fd[3], defense_during: "all", duration: dd(fd[fd.length-1], "permanent") };
+            if(ability.subtype.substr(0,7)  == "absence") {
+                ability.subtype = "absence";
+                ability.absence_at = fd[5];
+            }
+        }
+        fd = null;
+        // From Through During
+        exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " through " + defenseSubtypes + " during " + defensePhases + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "protecting", subtype: lc(fd[3]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: "@All", defense_during: fd[fd.length-2], duration: dd(fd[fd.length-1], "permanent") };
+            if(ability.subtype.substr(0,7)  == "absence") {
+                ability.subtype = "absence";
+                ability.absence_at = fd[4];
+            }
+        }
+        fd = null;
+        // From Through
+        exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " through " + defenseSubtypes + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "protecting", subtype: lc(fd[3]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: "@All", defense_during: "all", duration: dd(fd[fd.length-1], "permanent") };
+            if(ability.subtype.substr(0,7)  == "absence") {
+                ability.subtype = "absence";
+                ability.absence_at = fd[4];
+            }
+        }
+        fd = null;
         
         
         /** Ability Types End */
@@ -132,6 +180,21 @@ function parseInvestAffected(param) {
 // default duration: returns the default (def) if the duration (dur) is not set
 function dd(dur, def) {
     return dur ? dur.toLowerCase().replace(/[^a-z]*/g,"") : def;
+}
+
+// remove backticks
+function rb(input) {
+    return input.replace(/`/g, "");
+}
+
+// to lower case
+function lc(input) {
+    return input.toLowerCase();
+}
+
+// remove backticks + to lower case
+function rblc(input) {
+    return rb(lc(input));
 }
 
 function parseTriggers(inputLines) {
