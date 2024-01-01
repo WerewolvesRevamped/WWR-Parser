@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -41,8 +41,10 @@ function parseRole(inputLines) {
     return triggers;
 }
 
+/** REGEX - Reminder: You need double \'s here **/
 // general
 var targetType = "(`[^`]*`|@\\S*)";
+var attrDuration = "( \\(~[^\)]+\\))?";
 
 // specific
 var investAffected = " ([\\(\\),SDWD ]*)?";
@@ -91,14 +93,22 @@ function parseAbilities(trigger) {
         exp = new RegExp("Target " + targetType, "g");
         found = exp.exec(abilityLine);
         if(found) {
-            ability = { type: "target", subtype: "target", target: found[1] };
+            ability = { type: "targeting", subtype: "target", target: found[1] };
         }
         found = null;
         // untarget
         exp = new RegExp("Untarget", "g");
         found = exp.exec(abilityLine);
         if(found) {
-            ability = { type: "target", subtype: "untarget", target: found[1] };
+            ability = { type: "targeting", subtype: "untarget", target: found[1] };
+        }
+        found = null;
+        /** DISGUISING **/
+        exp = new RegExp("(Weakly|Strongly) Disguise " + targetType + " as " + targetType + attrDuration, "g");
+        found = exp.exec(abilityLine);
+        if(found) {
+            console.log("temp",found[4]);
+            ability = { type: "disguising", subtype: found[1].toLowerCase(), target: found[2], disguise: found[3], duration: dd(found[4], "permanent") };
         }
         found = null;
         
@@ -117,6 +127,11 @@ function parseAbilities(trigger) {
 // parse the WD/SD affected element for invest abilities
 function parseInvestAffected(param) {
     return { affected_by_wd: param.includes("WD"), affected_by_sd: param.includes("SD") };
+}
+
+// default duration: returns the default (def) if the duration (dur) is not set
+function dd(dur, def) {
+    return dur ? dur.toLowerCase().replace(/[^a-z]*/g,"") : def;
 }
 
 function parseTriggers(inputLines) {
