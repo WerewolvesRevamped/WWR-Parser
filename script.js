@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]\nImmediate Night: Manipulate @Self's `public voting power` to `2` (~NextDay)\nStarting: Manipulate @Self's `public voting power` to `-1`\nStarting: Manipulate @Selection's `public voting power` by `-1` (~NextDay)";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -47,16 +47,18 @@ const targetType = "(`[^`]*`|@\\S*)";
 const attrDuration = "( \\(~[^\)]+\\))?";
 const locationType = "(`[^`]*`|@\\S*|#\\S*)"; // extended version of target type
 const attributeName = targetType;
+const num = "(-?\\d+)";
 
 // specific
 const investAffected = " ([\\(\\),SDWD ]*)?";
-const defenseAttackSubtypes = "(`Attacks`|`Kills`|`Lynches`|`Attacks & Lynches`|`All`)";
+const defenseAttackSubtypes = "(Attacks|Kills|Lynches|Attacks & Lynches|All)";
 const defenseSubtypes = "(Absence at " + locationType + "|Active Defense|Passive Defense|Partial Defense|Recruitment Defense)";
 const defensePhases = "(Day|Night)";
 const attrValue = "([\\w\\d]+)";
 const attrData = "\\(" + attrValue + "\\)";
-const attrIndex = "(\\d+)";
+const attrIndex = num;
 const redirectSubtype = "(all|non-killing abilities)";
+const manipSubtype = "(public voting power|special public voting power|private voting power|public starting votes|lynch starting votes|election starting votes)";
 
 function parseAbilities(trigger) {
     for(let a in trigger[1]) {
@@ -114,7 +116,7 @@ function parseAbilities(trigger) {
         }
         /** PROTECTING **/
         // From By Through During
-        exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " by " + targetType + " through " + defenseSubtypes + " during " + defensePhases + attrDuration, "g");
+        exp = new RegExp("Protect " + targetType + " from `" + defenseAttackSubtypes + "` by " + targetType + " through " + defenseSubtypes + " during " + defensePhases + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "protecting", subtype: lc(fd[4]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: fd[3], defense_during: fd[fd.length-2], duration: dd(fd[fd.length-1], "permanent") };
@@ -124,7 +126,7 @@ function parseAbilities(trigger) {
             }
         }
         // From By Through
-        exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " by " + targetType + " through " + defenseSubtypes + attrDuration, "g");
+        exp = new RegExp("Protect " + targetType + " from `" + defenseAttackSubtypes + "` by " + targetType + " through " + defenseSubtypes + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "protecting", subtype: lc(fd[4]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: fd[3], defense_during: "all", duration: dd(fd[fd.length-1], "permanent") };
@@ -134,7 +136,7 @@ function parseAbilities(trigger) {
             }
         }
         // From Through During
-        exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " through " + defenseSubtypes + " during " + defensePhases + attrDuration, "g");
+        exp = new RegExp("Protect " + targetType + " from `" + defenseAttackSubtypes + "` through " + defenseSubtypes + " during " + defensePhases + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "protecting", subtype: lc(fd[3]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: "@All", defense_during: fd[fd.length-2], duration: dd(fd[fd.length-1], "permanent") };
@@ -144,7 +146,7 @@ function parseAbilities(trigger) {
             }
         }
         // From Through
-        exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " through " + defenseSubtypes + attrDuration, "g");
+        exp = new RegExp("Protect " + targetType + " from `" + defenseAttackSubtypes + "` through " + defenseSubtypes + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "protecting", subtype: lc(fd[3]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: "@All", defense_during: "all", duration: dd(fd[fd.length-1], "permanent") };
@@ -190,6 +192,19 @@ function parseAbilities(trigger) {
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "redirecting", subtype: fd[1], target: fd[3], source: fd[2] };
+        }
+        /** VOTE MANIPULATION **/
+        // manipulation by absolute value
+        exp = new RegExp("Manipulate " + targetType + "'s `" + manipSubtype + "` to `" + num + "`" + attrDuration , "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "manipulating", subtype: "absolute", target: fd[1], manip_type: fd[2], manip_value: fd[3], duration: dd(fd[4], "permanent") };
+        }
+        // manipulation by relative value
+        exp = new RegExp("Manipulate " + targetType + "'s `" + manipSubtype + "` by `" + num + "`" + attrDuration , "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "manipulating", subtype: "relative", target: fd[1], manip_type: fd[2], manip_value: fd[3], duration: dd(fd[4], "permanent") };
         }
         
         
