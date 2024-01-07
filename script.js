@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]\nImmediate Night: Manipulate @Self's `public voting power` to `2` (~NextDay)\nStarting: Manipulate @Self's `public voting power` to `-1`\nStarting: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\nStarting: Whisper to #Grandma's-House as `Grandma`";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]\nImmediate Night: Manipulate @Self's `public voting power` to `2` (~NextDay)\nStarting: Manipulate @Self's `public voting power` to `-1`\nStarting: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\nStarting: Whisper to #Grandma's-House as `Grandma`\nStarting: Join #Bakers\nStarting: Join #Cult as `Owner`\nImmediate Night: Add @Selection to #Grandma's-House (~NextDay)";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -46,6 +46,7 @@ function parseRole(inputLines) {
 const targetType = "(`[^`]*`|@\\S*)";
 const attrDuration = "( \\(~[^\)]+\\))?";
 const locationType = "(`[^`]*`|@\\S*|#\\S*)"; // extended version of target type
+const groupType = "(@\\S*|#\\S*)"; // reduced version of location type
 const attributeName = targetType;
 const num = "(-?\\d+)";
 
@@ -59,6 +60,7 @@ const attrData = "\\(" + attrValue + "\\)";
 const attrIndex = num;
 const redirectSubtype = "(all|non-killing abilities)";
 const manipSubtype = "(public voting power|special public voting power|private voting power|public starting votes|lynch starting votes|election starting votes)";
+const joiningSubtype = "(Member|Owner|Visitor)";
 
 function parseAbilities(trigger) {
     for(let a in trigger[1]) {
@@ -212,6 +214,43 @@ function parseAbilities(trigger) {
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "whispering", target: fd[1], disguise: fd[2], duration: dd(fd[3], "permanent") };
+        }
+        /** JOINING */
+        // default joining
+        exp = new RegExp("Join " + groupType + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "joining", subtype: "add", target: "@Self", group: fd[1], membership_type: "Member", duration: dd(fd[2], "persistent") };
+        }
+        // joining with specific membership type
+        exp = new RegExp("Join " + groupType + " as `" + joiningSubtype + "`" + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "joining", subtype: "add", target: "@Self", group: fd[1], membership_type: fd[2], duration: dd(fd[3], "persistent") };
+        }
+        // add somebody else 
+        exp = new RegExp("Add " + targetType + " to " + groupType + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "joining", subtype: "add", target: fd[1], group: fd[2], membership_type: "Member", duration: dd(fd[3], "persistent") };
+        }
+        // add somebody else as a specific membership type
+        exp = new RegExp("Add " + targetType + " to " + groupType + " as `" + joiningSubtype + "`" + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "joining", subtype: "add", target: fd[1], group: fd[2], membership_type: fd[3], duration: dd(fd[4], "persistent") };
+        }
+        // default leaving
+        exp = new RegExp("Leave " + groupType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "joining", subtype: "remove", target: "@Self", group: fd[1] };
+        }
+        // remove somebody else
+        exp = new RegExp("Remove " + targetType + " from " + groupType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "joining", subtype: "remove", target: fd[1], group: fd[2] };
         }
         
         
