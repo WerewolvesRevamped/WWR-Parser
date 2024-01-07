@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]\nImmediate Night: Manipulate @Self's `public voting power` to `2` (~NextDay)\nStarting: Manipulate @Self's `public voting power` to `-1`\nStarting: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\nStarting: Whisper to #Grandma's-House as `Grandma`\nStarting: Join #Bakers\nStarting: Join #Cult as `Owner`\nImmediate Night: Add @Selection to #Grandma's-House (~NextDay)\nImmediate Day: Grant `Fletcher's Customer` to @Selection\nImmediate: Revoke `Fletcher's Customer` from @Target [Quantity: 1]\nOn Death: Transfer `Journal Holder` from @Self to @Target\nPassive: Loyalty to `Hell` (Alignment)\nStarting: Obstruct Investigating for @Self\nStarting: Obstruct Role Investigating for @Self\nStarting: Obstruct Role Investigating for @Self ⇒ [0.6:`Flute Player`,0.4:@Result] (~Attribute)\nPassive Start Day: Obstruct @Self (~NextNight)";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]\nImmediate Night: Manipulate @Self's `public voting power` to `2` (~NextDay)\nStarting: Manipulate @Self's `public voting power` to `-1`\nStarting: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\nStarting: Whisper to #Grandma's-House as `Grandma`\nStarting: Join #Bakers\nStarting: Join #Cult as `Owner`\nImmediate Night: Add @Selection to #Grandma's-House (~NextDay)\nImmediate Day: Grant `Fletcher's Customer` to @Selection\nImmediate: Revoke `Fletcher's Customer` from @Target [Quantity: 1]\nOn Death: Transfer `Journal Holder` from @Self to @Target\nPassive: Loyalty to `Hell` (Alignment)\nStarting: Obstruct Investigating for @Self\nStarting: Obstruct Role Investigating for @Self\nStarting: Obstruct Kill Killing for @Self ⇒ `Flute Player` (~Attribute)\nStarting: Obstruct Role Investigating for @Self ⇒ (0.6:`Flute Player`,0.4:`@Result`) (~Attribute)\nPassive Start Day: Obstruct @Self (~NextNight)";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -49,6 +49,8 @@ const locationType = "(`[^`]*`|@\\S*|#\\S*)"; // extended version of target type
 const groupType = "(@\\S*|#\\S*)"; // reduced version of location type
 const attributeName = targetType;
 const num = "(-?\\d+)";
+const str = "([\\w\\s\\d@]+)";
+const decNum = "(-?\\d+\\.\\d+)";
 const abilityType = "(Killing|Investigating|Targeting|Disguising|Protecting|Applying|Redirecting|Vote Manipulating|Whispering|Joining|Granting|Loyalty|Obstructing|Poll Manipulating|Announcements|Role Change|Copying|Choices|Ascend Descend|Disband|Counting|Conversation Reset|Cancel|Switching)";
 const abilitySubtype = "((Kill|Attack|Lynch|True) Killing|(Role|Alignment|Category|Class|Count|Attribute) Investigating|(Target|Untarget) Targeting|Disguising|(Absence|Active|Passive|Partial|Recruitment) Protecting|(Add|Remove|Change) Applying|Redirecting|(Absolute|Relative) Vote Manipulating|Whispering|(Add|Remove) Joining|(Add|Remove|Transfer) Granting|Loyalty|Obstructing|Poll Manipulating|Announcements|Role Change|Copying|Choices|Ascend Descend|Disband|Counting|Conversation Reset|Cancel|Switching)";
 
@@ -292,14 +294,40 @@ function parseAbilities(trigger) {
         exp = new RegExp("Obstruct " + abilityType + " for " + targetType + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
-            ability = { type: "obstructing", target: fd[2], duration: dd(fd[3], "permanent"), obstructed_ability: lc(fd[1]), obstructed_subtype: "" };
+            ability = { type: "obstructing", target: fd[2], duration: dd(fd[3], "permanent"), obstructed_ability: lc(fd[1]), obstructed_subtype: "", custom_feedback: "" };
         }
         // obstruct specific ability subtype
         exp = new RegExp("Obstruct " + abilitySubtype + " for " + targetType + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             fd = fd.filter(el => el); // filter out empty capture groups
-            ability = { type: "obstructing", target: fd[3], duration: dd(fd[4], "permanent"), obstructed_ability: lc(fd[1].replace(fd[2], "").trim()), obstructed_subtype: lc(fd[2]) };
+            ability = { type: "obstructing", target: fd[3], duration: dd(fd[4], "permanent"), obstructed_ability: lc(fd[1].replace(fd[2], "").trim()), obstructed_subtype: lc(fd[2]), custom_feedback: "" };
+        }
+        // obstruct specific ability type; custom feedback
+        exp = new RegExp("Obstruct " + abilityType + " for " + targetType + " ⇒ `" + str + "`" + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "obstructing", target: fd[2], duration: dd(fd[4], "permanent"), obstructed_ability: lc(fd[1]), obstructed_subtype: "", custom_feedback: [{chance: 1, feedback: fd[3]}] };
+        }
+        // obstruct specific ability subtype; custom feedback
+        exp = new RegExp("Obstruct " + abilitySubtype + " for " + targetType + " ⇒ `" + str + "`" + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            fd = fd.filter(el => el); // filter out empty capture groups
+            ability = { type: "obstructing", target: fd[3], duration: dd(fd[5], "permanent"), obstructed_ability: lc(fd[1].replace(fd[2], "").trim()), obstructed_subtype: lc(fd[2]), custom_feedback: [{chance: 1, feedback: fd[4]}] };
+        }
+        // obstruct specific ability type; double custom feedback
+        exp = new RegExp("Obstruct " + abilityType + " for " + targetType + " ⇒ \\(" + decNum + ":`" + str + "`," + decNum + ":`" + str + "`\\)" + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "obstructing", target: fd[2], duration: dd(fd[7], "permanent"), obstructed_ability: lc(fd[1]), obstructed_subtype: "", custom_feedback: [{chance: +fd[3], feedback: fd[4]},{chance: +fd[5], feedback: fd[6] }] };
+        }
+        // obstruct specific ability subtype; double custom feedback
+        exp = new RegExp("Obstruct " + abilitySubtype + " for " + targetType + " ⇒ \\(" + decNum + ":`" + str + "`," + decNum + ":`" + str + "`\\)" + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            fd = fd.filter(el => el); // filter out empty capture groups
+            ability = { type: "obstructing", target: fd[3], duration: dd(fd[8], "permanent"), obstructed_ability: lc(fd[1].replace(fd[2], "").trim()), obstructed_subtype: lc(fd[2]), custom_feedback: [{chance: +fd[4], feedback: fd[5]},{chance: +fd[6], feedback: fd[7] }] };
         }
         
         
