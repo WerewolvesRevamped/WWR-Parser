@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nCompound:\n  • Immediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\n  • Afterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nCompound:\n  • Immediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\n  • Afterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -43,15 +43,19 @@ function parseRole(inputLines) {
 
 /** REGEX - Reminder: You need double \'s here **/
 // general
-var targetType = "(`[^`]*`|@\\S*)";
-var attrDuration = "( \\(~[^\)]+\\))?";
-var locationType = "(`[^`]*`|@\\S*|#\\S*)"; // extended version of target type
+const targetType = "(`[^`]*`|@\\S*)";
+const attrDuration = "( \\(~[^\)]+\\))?";
+const locationType = "(`[^`]*`|@\\S*|#\\S*)"; // extended version of target type
+const attributeName = targetType;
 
 // specific
-var investAffected = " ([\\(\\),SDWD ]*)?";
-var defenseAttackSubtypes = "(`Attacks`|`Kills`|`Lynches`|`Attacks & Lynches`|`All`)";
-var defenseSubtypes = "(Absence at " + locationType + "|Active Defense|Passive Defense|Partial Defense|Recruitment Defense)";
-var defensePhases = "(Day|Night)";
+const investAffected = " ([\\(\\),SDWD ]*)?";
+const defenseAttackSubtypes = "(`Attacks`|`Kills`|`Lynches`|`Attacks & Lynches`|`All`)";
+const defenseSubtypes = "(Absence at " + locationType + "|Active Defense|Passive Defense|Partial Defense|Recruitment Defense)";
+const defensePhases = "(Day|Night)";
+const attrValue = "([\\w\\d]+)";
+const attrData = "\\(" + attrValue + "\\)";
+const attrIndex = "(\\d+)";
 
 function parseAbilities(trigger) {
     for(let a in trigger[1]) {
@@ -69,7 +73,6 @@ function parseAbilities(trigger) {
         if(fd) {
             ability = { type: "killing", subtype: lc(fd[1]), target: fd[2] };
         }
-        fd = null;
         /** INVESTIGATION **/
         // Role/align/cat/class Invest
         exp = new RegExp("(Role|Alignment|Category|Class) Investigate " + targetType + investAffected, "g");
@@ -77,21 +80,18 @@ function parseAbilities(trigger) {
         if(fd) {
             ability = { type: "investigation", subtype: lc(fd[1]), target: fd[2], ...parseInvestAffected(fd[3]) };
         }
-        fd = null;
         // Attribute invest
         exp = new RegExp("Attribute Investigate " + targetType + " for " + targetType + investAffected, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "investigation", subtype: "attribute", target: fd[1], attribute: fd[2], ...parseInvestAffected(fd[3]) };
         }
-        fd = null;
         // Role Count invest
         exp = new RegExp("Investigate " + targetType + " Count" + investAffected, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "investigation", subtype: "count", target: fd[1], ...parseInvestAffected(fd[2]) };
         }
-        fd = null;
         /** TARGET **/
         // target
         exp = new RegExp("Target " + targetType, "g");
@@ -99,21 +99,18 @@ function parseAbilities(trigger) {
         if(fd) {
             ability = { type: "targeting", subtype: "target", target: fd[1] };
         }
-        fd = null;
         // untarget
         exp = new RegExp("Untarget", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "targeting", subtype: "untarget", target: fd[1] };
         }
-        fd = null;
         /** DISGUISING **/
         exp = new RegExp("(Weakly|Strongly) Disguise " + targetType + " as " + targetType + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "disguising", subtype: lc(fd[1]), target: fd[2], disguise: fd[3], duration: dd(fd[4], "permanent") };
         }
-        fd = null;
         /** PROTECTING **/
         // From By Through During
         exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " by " + targetType + " through " + defenseSubtypes + " during " + defensePhases + attrDuration, "g");
@@ -125,7 +122,6 @@ function parseAbilities(trigger) {
                 ability.absence_at = fd[5];
             }
         }
-        fd = null;
         // From By Through
         exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " by " + targetType + " through " + defenseSubtypes + attrDuration, "g");
         fd = exp.exec(abilityLine);
@@ -136,7 +132,6 @@ function parseAbilities(trigger) {
                 ability.absence_at = fd[5];
             }
         }
-        fd = null;
         // From Through During
         exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " through " + defenseSubtypes + " during " + defensePhases + attrDuration, "g");
         fd = exp.exec(abilityLine);
@@ -147,7 +142,6 @@ function parseAbilities(trigger) {
                 ability.absence_at = fd[4];
             }
         }
-        fd = null;
         // From Through
         exp = new RegExp("Protect " + targetType + " from " + defenseAttackSubtypes + " through " + defenseSubtypes + attrDuration, "g");
         fd = exp.exec(abilityLine);
@@ -158,7 +152,31 @@ function parseAbilities(trigger) {
                 ability.absence_at = fd[4];
             }
         }
-        fd = null;
+        /** APPLYING **/
+        // standard applying - add attribute
+        exp = new RegExp("Apply " + attributeName + " to " + targetType + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "applying", subtype: "add", target: fd[2], attribute: fd[1], duration: dd(fd[3], "permanent") };
+        }
+        // standard applying with parameter
+        exp = new RegExp("Apply " + attributeName + " to " + targetType + attrDuration + " " + attrData, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "applying", subtype: "add", target: fd[2], attribute: fd[1], duration: dd(fd[3], "permanent"), attr_index: 1, attr_value: fd[fd.length-1] };
+        }
+        // Remove Attribute
+        exp = new RegExp("Remove " + attributeName + " from " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "applying", subtype: "remove", target: fd[2], attribute: fd[1] };
+        }
+        // Change Attribute Value
+        exp = new RegExp("Change " + attributeName + " value `" + attrIndex + "` to `" + attrValue + "` for " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "applying", subtype: "change", target: fd[4], attribute: fd[1], attr_index: +fd[2], attr_value: fd[3]  };
+        }
         
         
         /** Ability Types End */
