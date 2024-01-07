@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nCompound:\n  • Immediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\n  • Afterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -56,6 +56,7 @@ const defensePhases = "(Day|Night)";
 const attrValue = "([\\w\\d]+)";
 const attrData = "\\(" + attrValue + "\\)";
 const attrIndex = "(\\d+)";
+const redirectSubtype = "(all|non-killing abilities)";
 
 function parseAbilities(trigger) {
     for(let a in trigger[1]) {
@@ -78,19 +79,19 @@ function parseAbilities(trigger) {
         exp = new RegExp("(Role|Alignment|Category|Class) Investigate " + targetType + investAffected, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
-            ability = { type: "investigation", subtype: lc(fd[1]), target: fd[2], ...parseInvestAffected(fd[3]) };
+            ability = { type: "investigating", subtype: lc(fd[1]), target: fd[2], ...parseInvestAffected(fd[3]) };
         }
         // Attribute invest
         exp = new RegExp("Attribute Investigate " + targetType + " for " + targetType + investAffected, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
-            ability = { type: "investigation", subtype: "attribute", target: fd[1], attribute: fd[2], ...parseInvestAffected(fd[3]) };
+            ability = { type: "investigating", subtype: "attribute", target: fd[1], attribute: fd[2], ...parseInvestAffected(fd[3]) };
         }
         // Role Count invest
         exp = new RegExp("Investigate " + targetType + " Count" + investAffected, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
-            ability = { type: "investigation", subtype: "count", target: fd[1], ...parseInvestAffected(fd[2]) };
+            ability = { type: "investigating", subtype: "count", target: fd[1], ...parseInvestAffected(fd[2]) };
         }
         /** TARGET **/
         // target
@@ -176,6 +177,19 @@ function parseAbilities(trigger) {
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "applying", subtype: "change", target: fd[4], attribute: fd[1], attr_index: +fd[2], attr_value: fd[3]  };
+        }
+        /** REDIRECTING **/
+        // redirect from all
+        exp = new RegExp("Redirect `" + redirectSubtype + "` to " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "redirecting", subtype: fd[1], target: fd[2], source: "@All" };
+        }
+        // redirect from certain players
+        exp = new RegExp("Redirect `" + redirectSubtype + "` from " + targetType + " to " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "redirecting", subtype: fd[1], target: fd[3], source: fd[2] };
         }
         
         
