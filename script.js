@@ -220,7 +220,7 @@ function parseAbilities(trigger) {
         if(fd) {
             ability = { type: "whispering", target: fd[1], disguise: fd[2], duration: dd(fd[3], "permanent") };
         }
-        /** JOINING */
+        /** JOINING **/
         // default joining
         exp = new RegExp("Join " + groupType + attrDuration, "g");
         fd = exp.exec(abilityLine);
@@ -257,7 +257,7 @@ function parseAbilities(trigger) {
         if(fd) {
             ability = { type: "joining", subtype: "remove", target: fd[1], group: fd[2] };
         }
-        /** GRANTING */
+        /** GRANTING **/
         // default granting
         exp = new RegExp("Grant " + targetType + " to " + targetType, "g");
         fd = exp.exec(abilityLine);
@@ -276,7 +276,7 @@ function parseAbilities(trigger) {
         if(fd) {
             ability = { type: "granting", subtype: "transfer", target: fd[2], role: fd[1], transfer_to: fd[3] };
         }
-        /** LOYALTY */
+        /** LOYALTY **/
         // loyalty
         exp = new RegExp("Loyalty to " + locationType + " \\(" + loyaltySubtype + "\\)", "g");
         fd = exp.exec(abilityLine);
@@ -329,6 +329,29 @@ function parseAbilities(trigger) {
             fd = fd.filter(el => el); // filter out empty capture groups
             ability = { type: "obstructing", target: fd[3], duration: dd(fd[8], "permanent"), obstructed_ability: lc(fd[1].replace(fd[2], "").trim()), obstructed_subtype: lc(fd[2]), custom_feedback: [{chance: +fd[4], feedback: fd[5]},{chance: +fd[6], feedback: fd[7] }] };
         }
+        /** POLL MANIPULATING **/
+        
+        /** ANNOUNCEMENTS **/
+        
+        /** ROLE CHANGE **/
+        
+        /** COPYING **/
+        
+        /** CHOICES **/
+        
+        /** ASCEND DESCEND **/
+        
+        /** DISBAND **/
+        
+        /** COUNTING **/
+        
+        /** CONVERSATION RESET **/
+        
+        /** CANCEL **/
+        
+        /** SWITCHING **/
+        
+        
         
         
         /** Ability Types End */
