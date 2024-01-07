@@ -342,7 +342,36 @@ function parseAbilities(trigger) {
             ability = { type: "obstructing", target: fd[3], duration: dd(fd[8], "permanent"), obstructed_ability: lc(fd[1].replace(fd[2], "").trim()), obstructed_subtype: lc(fd[2]), custom_feedback: [{chance: +fd[4], feedback: fd[5]},{chance: +fd[6], feedback: fd[7] }] };
         }
         /** POLL MANIPULATING **/
-        
+        // Poll duplication/addtion
+        exp = new RegExp("Add `" + str + "` Poll", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "poll", subtype: "addition", target: fd[1] };
+        }
+        // Creates a new poll
+        exp = new RegExp("Create `" + str + "` Poll in " + locationType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "poll", subtype: "creation", target: fd[1], poll_location: fd[2] };
+        }
+        // Cancel polls resulting ability
+        exp = new RegExp("Cancel `" + str + "` Poll", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "poll", subtype: "cancelling", target: fd[1] };
+        }
+        // Delete a poll
+        exp = new RegExp("Delete `" + str + "` Poll", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "poll", subtype: "deletion", target: fd[1] };
+        }
+        // Delete a poll
+        exp = new RegExp("Manipulate `" + str + "` Poll \\(" + targetType + " is `" + pollManipManipSubtype + "`\\)", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "poll", subtype: "manipulation", target: fd[1], manip_target: fd[2], manip_type: lc(fd[3]) };
+        }
         /** ANNOUNCEMENTS **/
         
         /** ROLE CHANGE **/
