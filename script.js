@@ -203,13 +203,13 @@ function parseAbilities(trigger) {
         exp = new RegExp("Manipulate " + targetType + "'s `" + manipSubtype + "` to `" + num + "`" + attrDuration , "g");
         fd = exp.exec(abilityLine);
         if(fd) {
-            ability = { type: "manipulating", subtype: "absolute", target: fd[1], manip_type: fd[2], manip_value: fd[3], duration: dd(fd[4], "permanent") };
+            ability = { type: "manipulating", subtype: "absolute", target: fd[1], manip_type: fd[2], manip_value: +fd[3], duration: dd(fd[4], "permanent") };
         }
         // manipulation by relative value
         exp = new RegExp("Manipulate " + targetType + "'s `" + manipSubtype + "` by `" + num + "`" + attrDuration , "g");
         fd = exp.exec(abilityLine);
         if(fd) {
-            ability = { type: "manipulating", subtype: "relative", target: fd[1], manip_type: fd[2], manip_value: fd[3], duration: dd(fd[4], "permanent") };
+            ability = { type: "manipulating", subtype: "relative", target: fd[1], manip_type: fd[2], manip_value: +fd[3], duration: dd(fd[4], "permanent") };
         }
         /** WHISPERING **/
         // manipulation by absolute value
@@ -223,25 +223,25 @@ function parseAbilities(trigger) {
         exp = new RegExp("Join " + groupType + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
-            ability = { type: "joining", subtype: "add", target: "@Self", group: fd[1], membership_type: "Member", duration: dd(fd[2], "persistent") };
+            ability = { type: "joining", subtype: "add", target: "@Self", group: fd[1], membership_type: "member", duration: dd(fd[2], "persistent") };
         }
         // joining with specific membership type
         exp = new RegExp("Join " + groupType + " as `" + joiningSubtype + "`" + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
-            ability = { type: "joining", subtype: "add", target: "@Self", group: fd[1], membership_type: fd[2], duration: dd(fd[3], "persistent") };
+            ability = { type: "joining", subtype: "add", target: "@Self", group: fd[1], membership_type: lc(fd[2]), duration: dd(fd[3], "persistent") };
         }
         // add somebody else 
         exp = new RegExp("Add " + targetType + " to " + groupType + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
-            ability = { type: "joining", subtype: "add", target: fd[1], group: fd[2], membership_type: "Member", duration: dd(fd[3], "persistent") };
+            ability = { type: "joining", subtype: "add", target: fd[1], group: fd[2], membership_type: "member", duration: dd(fd[3], "persistent") };
         }
         // add somebody else as a specific membership type
         exp = new RegExp("Add " + targetType + " to " + groupType + " as `" + joiningSubtype + "`" + attrDuration, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
-            ability = { type: "joining", subtype: "add", target: fd[1], group: fd[2], membership_type: fd[3], duration: dd(fd[4], "persistent") };
+            ability = { type: "joining", subtype: "add", target: fd[1], group: fd[2], membership_type: lc(fd[3]), duration: dd(fd[4], "persistent") };
         }
         // default leaving
         exp = new RegExp("Leave " + groupType, "g");
