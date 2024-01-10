@@ -171,6 +171,60 @@ function parseAbilities(trigger) {
             }
         }
         
+        for(let scal in scaling) {
+            let scalFound = false;
+            /** Multiplier **/
+            // always
+            exp = new RegExp("^x(\\d+)$", "g");
+            fd = exp.exec(scaling[scal]);
+            if(fd) {
+                parsedScaling.push({ type: "multiplier", quantity: +fd[1], odd: true, even: true });
+                scalFound = true;
+            }
+            // odd phase 
+            exp = new RegExp("^Odd: x(\\d+)$", "g");
+            fd = exp.exec(scaling[scal]);
+            if(fd) {
+                parsedScaling.push({ type: "multiplier", quantity: +fd[1], odd: true, even: false });
+                scalFound = true;
+            }
+            // even phase 
+            exp = new RegExp("^Even: x(\\d+)$", "g");
+            fd = exp.exec(scaling[scal]);
+            if(fd) {
+                parsedScaling.push({ type: "multiplier", quantity: +fd[1], odd: false, even: true });
+                scalFound = true;
+            }
+            /** Split Scaling **/
+            // always
+            exp = new RegExp("^\\*(\\d+)$", "g");
+            fd = exp.exec(scaling[scal]);
+            if(fd) {
+                parsedScaling.push({ type: "split", quantity: +fd[1] });
+                scalFound = true;
+            }
+            /** Dynamic Scaling **/
+            exp = new RegExp("^(\\$total|\\$living)/(\\d+)$", "g");
+            fd = exp.exec(scaling[scal]);
+            if(fd) {
+                parsedScaling.push({ type: "math_multiplier", quantity: "calc(" + fd[1] + "/" + fd[2] + ")" });
+                scalFound = true;
+            }
+            exp = new RegExp("^(\\$total|\\$living)(\\<|\\>|≤|≥|\\=)(\\d+) ⇒ (\\d+)$", "g");
+            fd = exp.exec(scaling[scal]);
+            if(fd) {
+                parsedScaling.push({ type: "dynamic", compare: fd[1], compare_type: fd[2], compare_to: +fd[3], quantity: +fd[4] });
+                scalFound = true;
+            }
+            /** Math Multiplier **/
+            exp = new RegExp("^(.+)$", "g");
+            fd = exp.exec(scaling[scal]);
+            if(fd && !scalFound) {
+                parsedScaling.push({ type: "math_multiplier", quantity: fd[1] });
+                scalFound = true;
+            }
+        }
+        
         /**
         Evaluate Ability Types
         **/
