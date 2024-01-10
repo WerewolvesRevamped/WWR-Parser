@@ -225,6 +225,22 @@ function parseAbilities(trigger) {
             }
         }
         
+        let cDirect = false;
+        let cRepeating = false;
+        let cVisitless = false;
+        let cForced = false;
+        let cForcedSelection = null;
+        for(let comp in compulsion) {
+            if(compulsion[comp] == "Direct") cDirect = true;
+            else if(compulsion[comp] == "Repeating") cRepeating = true;
+            else if(compulsion[comp] == "Visitless") cVisitless = true;
+            else if(compulsion[comp] == "Forced") cForced = true;
+            else if(compulsion[comp].substr(0, 6) == "Forced") {
+                cForced = true;
+                cForcedSelection = compulsion[comp].substr(7);
+            }
+        }
+        
         /**
         Evaluate Ability Types
         **/
@@ -700,13 +716,10 @@ function parseAbilities(trigger) {
             ability = { type: "switching", target: fd[1] };
         }
         
-        
-        
-        
         /** Ability Types End */
         if(ability) {
             console.log("IDENT", ability);
-            trigger[1][a] = { ability: ability, parameters: { restrictions: parsedRestrictions, scaling: parsedScaling } };
+            trigger[1][a] = { ability: ability, parameters: { restrictions: parsedRestrictions, scaling: parsedScaling, direct: cDirect, repeating: cRepeating, visitless: cVisitless, forced: cForced, forced_sel: cForcedSelection } };
         } else {
             console.log("UNIDENT", abilityLine);
         }
