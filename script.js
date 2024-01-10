@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]\nImmediate Night: Manipulate @Self's `public voting power` to `2` (~NextDay)\nStarting: Manipulate @Self's `public voting power` to `-1`\nStarting: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\nStarting: Whisper to #Grandma's-House as `Grandma`\nStarting: Join #Bakers\nStarting: Join #Cult as `Owner`\nImmediate Night: Add @Selection to #Grandma's-House (~NextDay)\nImmediate Day: Grant `Fletcher's Customer` to @Selection\nImmediate: Revoke `Fletcher's Customer` from @Target [Quantity: 1]\nOn Death: Transfer `Journal Holder` from @Self to @Target\nPassive: Loyalty to `Hell` (Alignment)\nStarting: Obstruct Investigating for @Self\nStarting: Obstruct Role Investigating for @Self\nStarting: Obstruct Kill Killing for @Self ⇒ `Flute Player` (~Attribute)\nStarting: Obstruct Role Investigating for @Self ⇒ (0.6:`Flute Player`,0.4:`@Result`) (~Attribute)\nPassive Start Day: Obstruct @Self (~NextNight)\nOn Death: Add `Wolfpack` Poll\nImmediate Night: Manipulate `Lynch` Poll (@Selection is `Disqualified`) [Succession: No Target Succession]\nOn Killed: Delete `Wolfpack` Poll\nPassive Start Day: Create `Medium` Poll in #Medium-Question:@Self\nImmediate: Cancel `Lynch` Poll [Quantity: 1, Temporal: Night 2+]\nImmediate: Role Change @Selection to `Wolf`\nImmediate Night: Full Copy @Selection (Suppressed)\nImmediate: Ascend\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/20))⟩ [Condition: count(@(OrigRole:Flute Player)) is `>1`]";
+let input = "Unique Role\nStarting:\n  • Whisper to #Grandma's-House as `Grandma`\n  • Manipulate @Self's `public voting power` to `0`\nImmediate Night:\n  • Manipulate @Self's `public voting power` to `2` (</>NextDay)\n  • Add @Selection to #Grandma's-House (</>NextDay)\n  • Add @SecondarySelection to #Grandma's-House (</>NextDay)\n  • Evaluate:\n    ‣ @Selection->PublicVotingPower > `0`: Manipulate @Selection's `public voting power` by `-1` (</>NextDay)\n    ‣ Otherwise: Learn `@Selection could not be manipulated`\n  • Evaluate:\n    ‣ @SecondarySelection->PublicVotingPower > `0`: Manipulate @SecondarySelection's `public voting power` by `-1` (</>NextDay)\n    ‣ Otherwise:  Learn `@SecondarySelection could not be manipulated\nStarting: Whisper to #Enchanted as `Flute Player`\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/10))⟩ [Condition: count(@(OrigRole:Flute Player)) is `1`]\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/20))⟩ [Condition: count(@(OrigRole:Flute Player)) is `>1`]";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -18,7 +18,7 @@ window.onload = (event) => {
     let parsedRole = parseRole(inputLines);
     
     console.log(parsedRole);
-    pretty = parsedRole.triggers.map(el => "<b>" + el[0] + ":</b>\n\t" + el[1].map(el2 => JSON.stringify(el2)).join("\n\t") + "\n").join("");
+    pretty = parsedRole.triggers.map(el => "<b>" + el.trigger + ":</b>\n\t" + (el.parameters?"<i>"+JSON.stringify(el.parameters)+"</i>\n\t":"") + el.abilities.map(el2 => JSON.stringify(el2)).join("\n\t") + "\n").join("");
     document.getElementsByClassName("output")[0].innerHTML = "<pre>" + pretty + "</pre>"; 
 };
 
@@ -37,16 +37,33 @@ let basicTriggerTypes = [...actionTimings, "Compound", "Starting", ...passiveTri
 let adancedTriggerTypes = ["On <Target> Death","On Visited [<Ability Type>]", "On <Target> Visited","On <Target> Visited [<Ability Type>]","On Action [<Ability Type>]"]; // trigger types containing parameters
 let bullets = ["•","‣","◦","·","⁃","⹀"];
 
-
+function delParam(tr) {
+    return tr.map(el => el.ability);
+}
 
 function parseRole(inputLines) {
     console.log("PARSE TRIGGERS");
     let triggers = parseTriggers(inputLines);
+    console.log(JSON.stringify(triggers));
     
-    console.log("PARSE ABILITIES")
+    // get a default param for comparision
+    const defaultParams = parseAbilities(["Immediate",["Disband"]])[1][0].parameters;
+    
+    console.log("PARSE ABILITIES");
     for(let t in triggers.triggers) {
-        let abilities = parseAbilities(triggers.triggers[t]);
-        triggers.triggers[t] = abilities;
+        let abilities = parseAbilities(triggers.triggers[t]); // parse abilities of a trigger
+        abilities[1] = abilities[1].filter(el => el.ability.type != "blank"); // remove blank lines
+        let paramAbilities = abilities[1].filter(el => el.ability.type != "error" && !deepEqual(el.parameters, defaultParams)); // check which abilities have params attached
+        // no params
+        if(paramAbilities.length == 0) {
+            triggers.triggers[t] = { trigger: abilities[0], abilities: delParam(abilities[1]) };
+        }
+        // params attached to first line
+        else if(paramAbilities.length == 1 && !deepEqual(abilities[1][0], defaultParams)) {
+            triggers.triggers[t] = { trigger: abilities[0], abilities: delParam(abilities[1]), parameters: abilities[1][0].parameters };
+        } else {
+            triggers.triggers[t] = { trigger: "error - invalid parameters", abilities: [], error_data: { trigger: abilities[0], abilities: abilities[1] } };
+        }
     }
     
     return triggers;
@@ -92,7 +109,7 @@ function parseAbilities(trigger) {
         
         let abilityLine = abilityLineSplit.shift();
         let abilityValues = abilityLine.length > 0 ? trigger[1][a].split(abilityLine)[1] : trigger[1][a];
-        console.log("VALUES: ", abilityValues);
+        //console.log("VALUES: ", abilityValues);
         
         /**
         Evaluate additional values
@@ -718,10 +735,13 @@ function parseAbilities(trigger) {
         
         /** Ability Types End */
         if(ability) {
-            console.log("IDENT", ability);
+            //console.log("IDENT", ability);
             trigger[1][a] = { ability: ability, parameters: { restrictions: parsedRestrictions, scaling: parsedScaling, direct: cDirect, repeating: cRepeating, visitless: cVisitless, forced: cForced, forced_sel: cForcedSelection } };
+        } else if(abilityLine == "") {
+            trigger[1][a] = { ability: { type: "blank" }, parameters: { } };
         } else {
-            console.log("UNIDENT", abilityLine);
+            //console.log("UNIDENT", abilityLine);
+            trigger[1][a] = { ability: { type: "error" }, parameters : { failed_ability: trigger[1][a] } };
         }
     }
     return trigger;
@@ -813,4 +833,32 @@ function parseTriggers(inputLines) {
 
     return { triggers: triggers, unique: unique };
 
+}
+
+
+function deepEqual(object1, object2) {
+    const keys1 = Object.keys(object1);
+    const keys2 = Object.keys(object2);
+
+    if(keys1.length !== keys2.length) {
+        return false;
+    }
+
+    for(const key of keys1) {
+        const val1 = object1[key];
+        const val2 = object2[key];
+        const areObjects = isObject(val1) && isObject(val2);
+        if (
+            areObjects && !deepEqual(val1, val2) ||
+            !areObjects && val1 !== val2
+        ) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+function isObject(object) {
+  return object != null && typeof object === 'object';
 }
