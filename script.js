@@ -64,7 +64,7 @@ const rawStr = "[\\w\\s\\d@]+";
 const str = "(" + rawStr + ")";
 const decNum = "(-?\\d+\\.\\d+)";
 const abilityType = "(Killing|Investigating|Targeting|Disguising|Protecting|Applying|Redirecting|Vote Manipulating|Whispering|Joining|Granting|Loyalty|Obstructing|Poll Manipulating|Announcements|Changing|Copying|Choices|Ascend|Descend|Disband|Counting|Conversation Reset|Cancel|Switching)";
-const abilitySubtype = "((Kill|Attack|Lynch|True) Killing|(Role|Alignment|Category|Class|Count|Attribute) Investigating|(Target|Untarget) Targeting|() Disguising|(Absence|Active|Passive|Partial|Recruitment) Protecting|(Add|Remove|Change) Applying|() Redirecting|(Absolute|Relative) Vote Manipulating|() Whispering|(Add|Remove) Joining|(Add|Remove|Transfer) Granting|() Loyalty|() Obstructing|(Addition|Creation|Cancelling|Deletion|Manipulation) Poll Manipulating|() Announcements|(Role|Alignment|Group) Changing|(Ability|Full) Copying|(Creating|Choosing) Choices|() Ascend|() Descend|() Disband|() Counting|() Conversation Reset|() Cancel|() Switching)";
+const abilitySubtype = "((Kill|Attack|Lynch|True) Killing|(Role|Alignment|Category|Class|Count|Attribute) Investigating|(Target|Untarget) Targeting|() Disguising|(Absence|Active|Passive|Partial|Recruitment) Protecting|(Add|Remove|Change) Applying|() Redirecting|(Absolute|Relative) Vote Manipulating|() Whispering|(Add|Remove) Joining|(Add|Remove|Transfer) Granting|() Loyalty|() Obstructing|(Addition|Creation|Cancelling|Deletion|Manipulation) Poll Manipulating|() Announcements|(Role|Alignment|Group) Changing|(Ability|Full) Copying|(Creating|Choosing) Choices|() Ascend|() Descend|() Disband|(Increment|Decrement|Set) Counting|() Conversation Reset|() Cancel|() Switching)";
 
 // specific
 const investAffected = " ([\\(\\),SDWD ]*)?";
@@ -467,7 +467,66 @@ function parseAbilities(trigger) {
             ability = { type: "disband", target: fd[1] };
         }
         /** COUNTING **/
-        
+        // increment self by 1
+        exp = new RegExp("Increment Counter", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "counting", subtype: "increment", counter_value: 1, target: "@Self" };
+        }
+        // decrement self by 1
+        exp = new RegExp("Decrement Counter", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "counting", subtype: "decrement", counter_value: 1, target: "@Self" };
+        }
+        // increment self by value
+        exp = new RegExp("Increment Counter by " + num, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "counting", subtype: "increment", counter_value: fd[1], target: "@Self" };
+        }
+        // decrement self by value
+        exp = new RegExp("Decrement Counter by " + num, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "counting", subtype: "decrement", counter_value: fd[1], target: "@Self" };
+        }
+        // set counter to value
+        exp = new RegExp("Set Counter to " + num, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "counting", subtype: "set", counter_value: fd[1], target: "@Self" };
+        }
+        // increment self by 1, for target
+        exp = new RegExp("Increment Counter for " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "counting", subtype: "increment", counter_value: 1, target: fd[1] };
+        }
+        // decrement self by 1, for target
+        exp = new RegExp("Decrement Counter for " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "counting", subtype: "decrement", counter_value: 1, target: fd[1] };
+        }
+        // increment self by value, for target
+        exp = new RegExp("Increment Counter by " + num + " for " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "counting", subtype: "increment", counter_value: fd[1], target: fd[2] };
+        }
+        // decrement self by value, for target
+        exp = new RegExp("Decrement Counter by " + num + " for " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "counting", subtype: "decrement", counter_value: fd[1], target: fd[2] };
+        }
+        // set counter to value, for target
+        exp = new RegExp("Set Counter to " + num + " for " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "counting", subtype: "set", counter_value: fd[1], target: fd[2] };
+        }
         /** CONVERSATION RESET **/
         // conversation reset self
         exp = new RegExp("Conversation Reset", "g");
