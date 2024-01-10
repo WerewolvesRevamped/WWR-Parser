@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]\nImmediate Night: Manipulate @Self's `public voting power` to `2` (~NextDay)\nStarting: Manipulate @Self's `public voting power` to `-1`\nStarting: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\nStarting: Whisper to #Grandma's-House as `Grandma`\nStarting: Join #Bakers\nStarting: Join #Cult as `Owner`\nImmediate Night: Add @Selection to #Grandma's-House (~NextDay)\nImmediate Day: Grant `Fletcher's Customer` to @Selection\nImmediate: Revoke `Fletcher's Customer` from @Target [Quantity: 1]\nOn Death: Transfer `Journal Holder` from @Self to @Target\nPassive: Loyalty to `Hell` (Alignment)\nStarting: Obstruct Investigating for @Self\nStarting: Obstruct Role Investigating for @Self\nStarting: Obstruct Kill Killing for @Self ⇒ `Flute Player` (~Attribute)\nStarting: Obstruct Role Investigating for @Self ⇒ (0.6:`Flute Player`,0.4:`@Result`) (~Attribute)\nPassive Start Day: Obstruct @Self (~NextNight)\nOn Death: Add `Wolfpack` Poll\nImmediate Night: Manipulate `Lynch` Poll (@Selection is `Disqualified`) [Succession: No Target Succession]\nOn Killed: Delete `Wolfpack` Poll\nPassive Start Day: Create `Medium` Poll in #Medium-Question:@Self\nImmediate: Cancel `Lynch` Poll [Quantity: 1, Temporal: Night 2+]\nImmediate: Role Change @Selection to `Wolf`";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]\nImmediate Night: Manipulate @Self's `public voting power` to `2` (~NextDay)\nStarting: Manipulate @Self's `public voting power` to `-1`\nStarting: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\nStarting: Whisper to #Grandma's-House as `Grandma`\nStarting: Join #Bakers\nStarting: Join #Cult as `Owner`\nImmediate Night: Add @Selection to #Grandma's-House (~NextDay)\nImmediate Day: Grant `Fletcher's Customer` to @Selection\nImmediate: Revoke `Fletcher's Customer` from @Target [Quantity: 1]\nOn Death: Transfer `Journal Holder` from @Self to @Target\nPassive: Loyalty to `Hell` (Alignment)\nStarting: Obstruct Investigating for @Self\nStarting: Obstruct Role Investigating for @Self\nStarting: Obstruct Kill Killing for @Self ⇒ `Flute Player` (~Attribute)\nStarting: Obstruct Role Investigating for @Self ⇒ (0.6:`Flute Player`,0.4:`@Result`) (~Attribute)\nPassive Start Day: Obstruct @Self (~NextNight)\nOn Death: Add `Wolfpack` Poll\nImmediate Night: Manipulate `Lynch` Poll (@Selection is `Disqualified`) [Succession: No Target Succession]\nOn Killed: Delete `Wolfpack` Poll\nPassive Start Day: Create `Medium` Poll in #Medium-Question:@Self\nImmediate: Cancel `Lynch` Poll [Quantity: 1, Temporal: Night 2+]\nImmediate: Role Change @Selection to `Wolf`\nImmediate Night: Full Copy @Selection (Suppressed)";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -63,7 +63,7 @@ const num = "(-?\\d+)";
 const str = "([\\w\\s\\d@]+)";
 const decNum = "(-?\\d+\\.\\d+)";
 const abilityType = "(Killing|Investigating|Targeting|Disguising|Protecting|Applying|Redirecting|Vote Manipulating|Whispering|Joining|Granting|Loyalty|Obstructing|Poll Manipulating|Announcements|Changing|Copying|Choices|Ascend Descend|Disband|Counting|Conversation Reset|Cancel|Switching)";
-const abilitySubtype = "((Kill|Attack|Lynch|True) Killing|(Role|Alignment|Category|Class|Count|Attribute) Investigating|(Target|Untarget) Targeting|() Disguising|(Absence|Active|Passive|Partial|Recruitment) Protecting|(Add|Remove|Change) Applying|() Redirecting|(Absolute|Relative) Vote Manipulating|() Whispering|(Add|Remove) Joining|(Add|Remove|Transfer) Granting|() Loyalty|() Obstructing|(Addition|Creation|Cancelling|Deletion|Manipulation) Poll Manipulating|() Announcements|(Role|Alignment|Group) Changing|() Copying|() Choices|() Ascend Descend|() Disband|() Counting|() Conversation Reset|() Cancel|() Switching)";
+const abilitySubtype = "((Kill|Attack|Lynch|True) Killing|(Role|Alignment|Category|Class|Count|Attribute) Investigating|(Target|Untarget) Targeting|() Disguising|(Absence|Active|Passive|Partial|Recruitment) Protecting|(Add|Remove|Change) Applying|() Redirecting|(Absolute|Relative) Vote Manipulating|() Whispering|(Add|Remove) Joining|(Add|Remove|Transfer) Granting|() Loyalty|() Obstructing|(Addition|Creation|Cancelling|Deletion|Manipulation) Poll Manipulating|() Announcements|(Role|Alignment|Group) Changing|(Ability|Full) Copying|() Choices|() Ascend Descend|() Disband|() Counting|() Conversation Reset|() Cancel|() Switching)";
 
 // specific
 const investAffected = " ([\\(\\),SDWD ]*)?";
@@ -405,7 +405,36 @@ function parseAbilities(trigger) {
             ability = { type: "changing", subtype: "group", target: fd[1], change_to: fd[2] };
         }
         /** COPYING **/
-        
+        // copy abilities, target to self
+        exp = new RegExp("Copy " + targetType + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "copying", subtype: "ability", target: fd[1], copy_to: "@Self", duration: dd(fd[2], "permanent") };
+        }
+        // copy abilities, target to target2
+        exp = new RegExp("Copy " + targetType + " to " + targetType + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "copying", subtype: "ability", target: fd[1], copy_to: fd[2], duration: dd(fd[3], "permanent") };
+        }
+        // copy abilities, target to target
+        exp = new RegExp("Duplicate " + targetType + "'s abilities" + attrDuration, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "copying", subtype: "ability", target: fd[1], copy_to: fd[1], duration: dd(fd[2], "permanent") };
+        }
+        // full copy
+        exp = new RegExp("Full Copy " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "copying", subtype: "full", target: fd[1], copy_to: "@Self", suppressed: false, duration: dd(fd[2], "permanent") };
+        }
+        // full copy, surpressed
+        exp = new RegExp("Full Copy " + targetType + " (Suppressed)", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "copying", subtype: "full", target: fd[1], copy_to: "@Self", suppressed: true, duration: dd(fd[2], "permanent") };
+        }
         /** CHOICES **/
         
         /** ASCEND DESCEND **/
