@@ -467,6 +467,18 @@ function parseAbilities(trigger) {
         /** COUNTING **/
         
         /** CONVERSATION RESET **/
+        // disband self
+        exp = new RegExp("Conversation Reset", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "reset", target: "@Self" };
+        }
+        // disband
+        exp = new RegExp("Conversation Reset " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "reset", target: fd[1] };
+        }
         
         /** CANCEL **/
         
