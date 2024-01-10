@@ -373,7 +373,18 @@ function parseAbilities(trigger) {
             ability = { type: "poll", subtype: "manipulation", target: fd[1], manip_target: fd[2], manip_type: lc(fd[3]) };
         }
         /** ANNOUNCEMENTS **/
-        
+        // reveal
+        exp = new RegExp("Reveal " + targetType + " to " + locationType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "announcement", target: fd[2], info: fd[1] };
+        }
+        // reveal
+        exp = new RegExp("(Learn|Know) " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "announcement", target: "@Self", info: fd[2] };
+        }
         /** ROLE CHANGE **/
         
         /** COPYING **/
