@@ -451,6 +451,18 @@ function parseAbilities(trigger) {
             ability = { type: "descend" };
         }
         /** DISBAND **/
+        // disband self
+        exp = new RegExp("Disband", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "disband", target: "@Self" };
+        }
+        // disband
+        exp = new RegExp("Disband " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "disband", target: fd[1] };
+        }
         
         /** COUNTING **/
         
