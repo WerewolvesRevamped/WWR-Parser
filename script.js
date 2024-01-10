@@ -1,4 +1,4 @@
-let input = "Unique Role\nStarting:\n  • Whisper to #Grandma's-House as `Grandma`\n  • Manipulate @Self's `public voting power` to `0`\nImmediate Night:\n  • Manipulate @Self's `public voting power` to `2` (</>NextDay)\n  • Add @Selection to #Grandma's-House (</>NextDay)\n  • Add @SecondarySelection to #Grandma's-House (</>NextDay)\n  • Evaluate:\n    ‣ @Selection->PublicVotingPower > `0`: Manipulate @Selection's `public voting power` by `-1` (</>NextDay)\n    ‣ Otherwise: Learn `@Selection could not be manipulated`\n  • Evaluate:\n    ‣ @SecondarySelection->PublicVotingPower > `0`: Manipulate @SecondarySelection's `public voting power` by `-1` (</>NextDay)\n    ‣ Otherwise:  Learn `@SecondarySelection could not be manipulated\nStarting: Whisper to #Enchanted as `Flute Player`\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/10))⟩ [Condition: count(@(OrigRole:Flute Player)) is `1`]\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/20))⟩ [Condition: count(@(OrigRole:Flute Player)) is `>1`]";
+let input = "Unique Role\nStarting:\n  • Whisper to #Grandma's-House as `Grandma`\n  • Manipulate @Self's `public voting power` to `0`\nImmediate Night:\n  • Manipulate @Self's `public voting power` to `2` (~NextDay)\n  • Add @Selection to #Grandma's-House (~NextDay)\n  • Add @SecondarySelection to #Grandma's-House (~NextDay)\n  • Evaluate:\n    ‣ @Selection->PublicVotingPower > `0`: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\n    ‣ Otherwise: Learn `@Selection could not be manipulated`\n  • Evaluate:\n    ‣ @SecondarySelection->PublicVotingPower > `0`: Manipulate @SecondarySelection's `public voting power` by `-1` (~NextDay)\n    ‣ Otherwise:  Learn `@SecondarySelection could not be manipulated`\nStarting: Whisper to #Enchanted as `Flute Player`\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/10))⟩ [Condition: count(@(OrigRole:Flute Player)) is `1`]\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/20))⟩ [Condition: count(@(OrigRole:Flute Player)) is `>1`]";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -17,8 +17,8 @@ window.onload = (event) => {
     let inputLines = input.split("\n");
     let parsedRole = parseRole(inputLines);
     
-    console.log(parsedRole);
-    pretty = parsedRole.triggers.map(el => "<b>" + el.trigger + ":</b>\n\t" + (el.parameters?"<i>"+JSON.stringify(el.parameters)+"</i>\n\t":"") + el.abilities.map(el2 => JSON.stringify(el2)).join("\n\t") + "\n").join("");
+    console.log(JSON.stringify(parsedRole));
+    pretty = parsedRole.triggers.map(el => "<b>" + el.trigger + ":</b>\n\t" + (el.parameters?"<i>"+JSON.stringify(el.parameters)+"</i>\n\t":"") + el.abilities.map(el2 => { if(el2.sub_abilities) { let sa = el2.sub_abilities; delete el2.sub_abilities; return JSON.stringify(el2) + "\n\t\t" + sa.map(el3 => "<i>"+ el3.condition + "</i>\n\t\t" + JSON.stringify(el3.ability)).join("\n\t\t") } else { return JSON.stringify(el2); } }).join("\n\t") + "\n").join("");
     document.getElementsByClassName("output")[0].innerHTML = "<pre>" + pretty + "</pre>"; 
 };
 
@@ -52,7 +52,36 @@ function parseRole(inputLines) {
     console.log("PARSE ABILITIES");
     for(let t in triggers.triggers) {
         let abilities = parseAbilities(triggers.triggers[t]); // parse abilities of a trigger
+        //console.log(JSON.stringify(abilities));
+        /** Preprocessing **/
+        /* Reformat P/E */
+        let inPE = false;
+        let peDepth = -1;
+        let peIndex = null;
+        for(const a in abilities[1]) {
+            if(abilities[1][a].ability.type == "process" || abilities[1][a].ability.type == "evaluate") {
+                inPE = true;
+                peDepth = abilities[1][a].depth;
+                peIndex = a;
+                abilities[1][a].ability.sub_abilities = [];
+                continue;
+            }
+            if(inPE) {
+                if(abilities[1][a].depth > peDepth) {
+                    let dc = deepCopy(abilities[1][a]);
+                    if(dc.ability.type != "error") abilities[1][peIndex].ability.sub_abilities.push({ability: dc.ability, condition: dc.condition});
+                    else abilities[1][peIndex].ability.sub_abilities.push({ability: dc.ability, condition: dc});
+                    abilities[1][a].ability.type = "blank";
+                } else {
+                    inPE = false;
+                }
+            }
+        }
+        /* Remove Blank */
         abilities[1] = abilities[1].filter(el => el.ability.type != "blank"); // remove blank lines
+        
+        /** Formatting */
+        /* Output */
         let paramAbilities = abilities[1].filter(el => el.ability.type != "error" && !deepEqual(el.parameters, defaultParams)); // check which abilities have params attached
         // no params
         if(paramAbilities.length == 0) {
@@ -62,7 +91,7 @@ function parseRole(inputLines) {
         else if(paramAbilities.length == 1 && !deepEqual(abilities[1][0], defaultParams)) {
             triggers.triggers[t] = { trigger: abilities[0], abilities: delParam(abilities[1]), parameters: abilities[1][0].parameters };
         } else {
-            triggers.triggers[t] = { trigger: "error - invalid parameters", abilities: [], error_data: { trigger: abilities[0], abilities: abilities[1] } };
+            triggers.triggers[t] = { trigger: "error_invalid_parameters", abilities: [], error_data: { trigger: abilities[0], abilities: abilities[1] } };
         }
     }
     
@@ -82,6 +111,7 @@ const str = "(" + rawStr + ")";
 const decNum = "(-?\\d+\\.\\d+)";
 const abilityType = "(Killing|Investigating|Targeting|Disguising|Protecting|Applying|Redirecting|Vote Manipulating|Whispering|Joining|Granting|Loyalty|Obstructing|Poll Manipulating|Announcements|Changing|Copying|Choices|Ascend|Descend|Disband|Counting|Conversation Reset|Cancel|Switching)";
 const abilitySubtype = "((Kill|Attack|Lynch|True) Killing|(Role|Alignment|Category|Class|Count|Attribute) Investigating|(Target|Untarget) Targeting|() Disguising|(Absence|Active|Passive|Partial|Recruitment) Protecting|(Add|Remove|Change) Applying|() Redirecting|(Absolute|Relative) Vote Manipulating|() Whispering|(Add|Remove) Joining|(Add|Remove|Transfer) Granting|() Loyalty|() Obstructing|(Addition|Creation|Cancelling|Deletion|Manipulation) Poll Manipulating|() Announcements|(Role|Alignment|Group) Changing|(Ability|Full) Copying|(Creating|Choosing) Choices|() Ascend|() Descend|() Disband|(Increment|Decrement|Set) Counting|() Conversation Reset|() Cancel|() Switching)";
+const bulletsRegex = /(•|‣|◦|·|⁃|⹀)/;
 
 // specific
 const investAffected = " ([\\(\\),SDWD ]*)?";
@@ -107,8 +137,16 @@ function parseAbilities(trigger) {
         let ability = null;
         let exp, fd;
         
-        let abilityLine = abilityLineSplit.shift();
+        let abilityLine = abilityLineSplit.shift().replace(bulletsRegex,"").trim();
         let abilityValues = abilityLine.length > 0 ? trigger[1][a].split(abilityLine)[1] : trigger[1][a];
+        
+        // check for P/E Condition
+        let abilityLineSplitPE = abilityLine.split(": ");
+        let peCond;
+        if(abilityLineSplitPE.length == 2) {
+            abilityLine = abilityLineSplitPE[1].trim();
+            peCond = abilityLineSplitPE[0].trim();
+        }
         //console.log("VALUES: ", abilityValues);
         
         /**
@@ -263,52 +301,52 @@ function parseAbilities(trigger) {
         **/
         
         /** KILLING **/
-        exp = new RegExp("(Kill|Attack|Lynch|True Kill) " + targetType, "g");
+        exp = new RegExp("^(Kill|Attack|Lynch|True Kill) " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "killing", subtype: lc(fd[1]), target: fd[2] };
         }
         /** INVESTIGATION **/
         // Role/align/cat/class Invest
-        exp = new RegExp("(Role|Alignment|Category|Class) Investigate " + targetType + investAffected, "g");
+        exp = new RegExp("^(Role|Alignment|Category|Class) Investigate " + targetType + investAffected + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "investigating", subtype: lc(fd[1]), target: fd[2], ...parseInvestAffected(fd[3]) };
         }
         // Attribute invest
-        exp = new RegExp("Attribute Investigate " + targetType + " for " + targetType + investAffected, "g");
+        exp = new RegExp("^Attribute Investigate " + targetType + " for " + targetType + investAffected + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "investigating", subtype: "attribute", target: fd[1], attribute: fd[2], ...parseInvestAffected(fd[3]) };
         }
         // Role Count invest
-        exp = new RegExp("Investigate " + targetType + " Count" + investAffected, "g");
+        exp = new RegExp("^Investigate " + targetType + " Count" + investAffected + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "investigating", subtype: "count", target: fd[1], ...parseInvestAffected(fd[2]) };
         }
         /** TARGET **/
         // target
-        exp = new RegExp("Target " + targetType, "g");
+        exp = new RegExp("^Target " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "targeting", subtype: "target", target: fd[1] };
         }
         // untarget
-        exp = new RegExp("Untarget", "g");
+        exp = new RegExp("^Untarget$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "targeting", subtype: "untarget", target: fd[1] };
         }
         /** DISGUISING **/
-        exp = new RegExp("(Weakly|Strongly) Disguise " + targetType + " as " + targetType + attrDuration, "g");
+        exp = new RegExp("^(Weakly|Strongly) Disguise " + targetType + " as " + targetType + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "disguising", subtype: lc(fd[1]), target: fd[2], disguise: fd[3], duration: dd(fd[4], "permanent") };
         }
         /** PROTECTING **/
         // From By Through During
-        exp = new RegExp("Protect " + targetType + " from `" + defenseAttackSubtypes + "` by " + targetType + " through " + defenseSubtypes + " during " + defensePhases + attrDuration, "g");
+        exp = new RegExp("^Protect " + targetType + " from `" + defenseAttackSubtypes + "` by " + targetType + " through " + defenseSubtypes + " during " + defensePhases + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "protecting", subtype: lc(fd[4]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: fd[3], defense_during: fd[fd.length-2], duration: dd(fd[fd.length-1], "permanent") };
@@ -318,7 +356,7 @@ function parseAbilities(trigger) {
             }
         }
         // From By Through
-        exp = new RegExp("Protect " + targetType + " from `" + defenseAttackSubtypes + "` by " + targetType + " through " + defenseSubtypes + attrDuration, "g");
+        exp = new RegExp("^Protect " + targetType + " from `" + defenseAttackSubtypes + "` by " + targetType + " through " + defenseSubtypes + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "protecting", subtype: lc(fd[4]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: fd[3], defense_during: "all", duration: dd(fd[fd.length-1], "permanent") };
@@ -328,7 +366,7 @@ function parseAbilities(trigger) {
             }
         }
         // From Through During
-        exp = new RegExp("Protect " + targetType + " from `" + defenseAttackSubtypes + "` through " + defenseSubtypes + " during " + defensePhases + attrDuration, "g");
+        exp = new RegExp("^Protect " + targetType + " from `" + defenseAttackSubtypes + "` through " + defenseSubtypes + " during " + defensePhases + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "protecting", subtype: lc(fd[3]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: "@All", defense_during: fd[fd.length-2], duration: dd(fd[fd.length-1], "permanent") };
@@ -338,7 +376,7 @@ function parseAbilities(trigger) {
             }
         }
         // From Through
-        exp = new RegExp("Protect " + targetType + " from `" + defenseAttackSubtypes + "` through " + defenseSubtypes + attrDuration, "g");
+        exp = new RegExp("^Protect " + targetType + " from `" + defenseAttackSubtypes + "` through " + defenseSubtypes + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "protecting", subtype: lc(fd[3]), target: fd[1], defense_from_type: rblc(fd[2]), defense_from_target: "@All", defense_during: "all", duration: dd(fd[fd.length-1], "permanent") };
@@ -349,166 +387,166 @@ function parseAbilities(trigger) {
         }
         /** APPLYING **/
         // standard applying - add attribute
-        exp = new RegExp("Apply " + attributeName + " to " + targetType + attrDuration, "g");
+        exp = new RegExp("^Apply " + attributeName + " to " + targetType + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "applying", subtype: "add", target: fd[2], attribute: fd[1], duration: dd(fd[3], "permanent") };
         }
         // standard applying with parameter
-        exp = new RegExp("Apply " + attributeName + " to " + targetType + attrDuration + " " + attrData, "g");
+        exp = new RegExp("^Apply " + attributeName + " to " + targetType + attrDuration + " " + attrData + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "applying", subtype: "add", target: fd[2], attribute: fd[1], duration: dd(fd[3], "permanent"), attr_index: 1, attr_value: fd[fd.length-1] };
         }
         // Remove Attribute
-        exp = new RegExp("Remove " + attributeName + " from " + targetType, "g");
+        exp = new RegExp("^Remove " + attributeName + " from " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "applying", subtype: "remove", target: fd[2], attribute: fd[1] };
         }
         // Change Attribute Value
-        exp = new RegExp("Change " + attributeName + " value `" + attrIndex + "` to `" + attrValue + "` for " + targetType, "g");
+        exp = new RegExp("^Change " + attributeName + " value `" + attrIndex + "` to `" + attrValue + "` for " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "applying", subtype: "change", target: fd[4], attribute: fd[1], attr_index: +fd[2], attr_value: fd[3]  };
         }
         /** REDIRECTING **/
         // redirect from all
-        exp = new RegExp("Redirect `" + redirectSubtype + "` to " + targetType, "g");
+        exp = new RegExp("^Redirect `" + redirectSubtype + "` to " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "redirecting", subtype: fd[1], target: fd[2], source: "@All" };
         }
         // redirect from certain players
-        exp = new RegExp("Redirect `" + redirectSubtype + "` from " + targetType + " to " + targetType, "g");
+        exp = new RegExp("^Redirect `" + redirectSubtype + "` from " + targetType + " to " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "redirecting", subtype: fd[1], target: fd[3], source: fd[2] };
         }
         /** VOTE MANIPULATION **/
         // manipulation by absolute value
-        exp = new RegExp("Manipulate " + targetType + "'s `" + manipSubtype + "` to `" + num + "`" + attrDuration , "g");
+        exp = new RegExp("^Manipulate " + targetType + "'s `" + manipSubtype + "` to `" + num + "`" + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "manipulating", subtype: "absolute", target: fd[1], manip_type: fd[2], manip_value: +fd[3], duration: dd(fd[4], "permanent") };
         }
         // manipulation by relative value
-        exp = new RegExp("Manipulate " + targetType + "'s `" + manipSubtype + "` by `" + num + "`" + attrDuration , "g");
+        exp = new RegExp("^Manipulate " + targetType + "'s `" + manipSubtype + "` by `" + num + "`" + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "manipulating", subtype: "relative", target: fd[1], manip_type: fd[2], manip_value: +fd[3], duration: dd(fd[4], "permanent") };
         }
         /** WHISPERING **/
         // manipulation by absolute value
-        exp = new RegExp("Whisper to " + locationType + " as " + targetType + attrDuration , "g");
+        exp = new RegExp("^Whisper to " + locationType + " as " + targetType + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "whispering", target: fd[1], disguise: fd[2], duration: dd(fd[3], "permanent") };
         }
         /** JOINING **/
         // default joining
-        exp = new RegExp("Join " + groupType + attrDuration, "g");
+        exp = new RegExp("^Join " + groupType + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "joining", subtype: "add", target: "@Self", group: fd[1], membership_type: "member", duration: dd(fd[2], "persistent") };
         }
         // joining with specific membership type
-        exp = new RegExp("Join " + groupType + " as `" + joiningSubtype + "`" + attrDuration, "g");
+        exp = new RegExp("^Join " + groupType + " as `" + joiningSubtype + "`" + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "joining", subtype: "add", target: "@Self", group: fd[1], membership_type: lc(fd[2]), duration: dd(fd[3], "persistent") };
         }
         // add somebody else 
-        exp = new RegExp("Add " + targetType + " to " + groupType + attrDuration, "g");
+        exp = new RegExp("^Add " + targetType + " to " + groupType + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "joining", subtype: "add", target: fd[1], group: fd[2], membership_type: "member", duration: dd(fd[3], "persistent") };
         }
         // add somebody else as a specific membership type
-        exp = new RegExp("Add " + targetType + " to " + groupType + " as `" + joiningSubtype + "`" + attrDuration, "g");
+        exp = new RegExp("^Add " + targetType + " to " + groupType + " as `" + joiningSubtype + "`" + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "joining", subtype: "add", target: fd[1], group: fd[2], membership_type: lc(fd[3]), duration: dd(fd[4], "persistent") };
         }
         // default leaving
-        exp = new RegExp("Leave " + groupType, "g");
+        exp = new RegExp("^Leave " + groupType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "joining", subtype: "remove", target: "@Self", group: fd[1] };
         }
         // remove somebody else
-        exp = new RegExp("Remove " + targetType + " from " + groupType, "g");
+        exp = new RegExp("^Remove " + targetType + " from " + groupType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "joining", subtype: "remove", target: fd[1], group: fd[2] };
         }
         /** GRANTING **/
         // default granting
-        exp = new RegExp("Grant " + targetType + " to " + targetType, "g");
+        exp = new RegExp("^Grant " + targetType + " to " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "granting", subtype: "add", target: fd[2], role: fd[1] };
         }
         // revoking
-        exp = new RegExp("Revoke " + targetType + " from " + targetType, "g");
+        exp = new RegExp("^Revoke " + targetType + " from " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "granting", subtype: "remove", target: fd[2], role: fd[1] };
         }
         // transfer
-        exp = new RegExp("Transfer " + targetType + " from " + targetType + " to " + targetType, "g");
+        exp = new RegExp("^Transfer " + targetType + " from " + targetType + " to " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "granting", subtype: "transfer", target: fd[2], role: fd[1], transfer_to: fd[3] };
         }
         /** LOYALTY **/
         // loyalty
-        exp = new RegExp("Loyalty to " + locationType + " \\(" + loyaltySubtype + "\\)", "g");
+        exp = new RegExp("^Loyalty to " + locationType + " \\(" + loyaltySubtype + "\\)$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "loyalty", subtype: fd[2], target: fd[1] };
         }
         /** OBSTRUCTING **/
         // obstruct all
-        exp = new RegExp("Obstruct " + targetType + attrDuration, "g");
+        exp = new RegExp("^Obstruct " + targetType + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "obstructing", target: fd[1], duration: dd(fd[2], "permanent") };
         }
         // obstruct specific ability type
-        exp = new RegExp("Obstruct " + abilityType + " for " + targetType + attrDuration, "g");
+        exp = new RegExp("^Obstruct " + abilityType + " for " + targetType + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "obstructing", target: fd[2], duration: dd(fd[3], "permanent"), obstructed_ability: lc(fd[1]), obstructed_subtype: "", custom_feedback: "" };
         }
         // obstruct specific ability subtype
-        exp = new RegExp("Obstruct " + abilitySubtype + " for " + targetType + attrDuration, "g");
+        exp = new RegExp("^Obstruct " + abilitySubtype + " for " + targetType + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             fd = fd.filter(el => el); // filter out empty capture groups
             ability = { type: "obstructing", target: fd[3], duration: dd(fd[4], "permanent"), obstructed_ability: lc(fd[1].replace(fd[2], "").trim()), obstructed_subtype: lc(fd[2]), custom_feedback: "" };
         }
         // obstruct specific ability type; custom feedback
-        exp = new RegExp("Obstruct " + abilityType + " for " + targetType + " ⇒ `" + str + "`" + attrDuration, "g");
+        exp = new RegExp("^Obstruct " + abilityType + " for " + targetType + " ⇒ `" + str + "`" + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "obstructing", target: fd[2], duration: dd(fd[4], "permanent"), obstructed_ability: lc(fd[1]), obstructed_subtype: "", custom_feedback: [{chance: 1, feedback: fd[3]}] };
         }
         // obstruct specific ability subtype; custom feedback
-        exp = new RegExp("Obstruct " + abilitySubtype + " for " + targetType + " ⇒ `" + str + "`" + attrDuration, "g");
+        exp = new RegExp("^Obstruct " + abilitySubtype + " for " + targetType + " ⇒ `" + str + "`" + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             fd = fd.filter(el => el); // filter out empty capture groups
             ability = { type: "obstructing", target: fd[3], duration: dd(fd[5], "permanent"), obstructed_ability: lc(fd[1].replace(fd[2], "").trim()), obstructed_subtype: lc(fd[2]), custom_feedback: [{chance: 1, feedback: fd[4]}] };
         }
         // obstruct specific ability type; double custom feedback
-        exp = new RegExp("Obstruct " + abilityType + " for " + targetType + " ⇒ \\(" + decNum + ":`" + str + "`," + decNum + ":`" + str + "`\\)" + attrDuration, "g");
+        exp = new RegExp("^Obstruct " + abilityType + " for " + targetType + " ⇒ \\(" + decNum + ":`" + str + "`," + decNum + ":`" + str + "`\\)" + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "obstructing", target: fd[2], duration: dd(fd[7], "permanent"), obstructed_ability: lc(fd[1]), obstructed_subtype: "", custom_feedback: [{chance: +fd[3], feedback: fd[4]},{chance: +fd[5], feedback: fd[6] }] };
         }
         // obstruct specific ability subtype; double custom feedback
-        exp = new RegExp("Obstruct " + abilitySubtype + " for " + targetType + " ⇒ \\(" + decNum + ":`" + str + "`," + decNum + ":`" + str + "`\\)" + attrDuration, "g");
+        exp = new RegExp("^Obstruct " + abilitySubtype + " for " + targetType + " ⇒ \\(" + decNum + ":`" + str + "`," + decNum + ":`" + str + "`\\)" + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             fd = fd.filter(el => el); // filter out empty capture groups
@@ -516,94 +554,94 @@ function parseAbilities(trigger) {
         }
         /** POLL MANIPULATING **/
         // Poll duplication/addtion
-        exp = new RegExp("Add `" + str + "` Poll", "g");
+        exp = new RegExp("^Add `" + str + "` Poll$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "poll", subtype: "addition", target: fd[1] };
         }
         // Creates a new poll
-        exp = new RegExp("Create `" + str + "` Poll in " + locationType, "g");
+        exp = new RegExp("^Create `" + str + "` Poll in " + locationType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "poll", subtype: "creation", target: fd[1], poll_location: fd[2] };
         }
         // Cancel polls resulting ability
-        exp = new RegExp("Cancel `" + str + "` Poll", "g");
+        exp = new RegExp("^Cancel `" + str + "` Poll$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "poll", subtype: "cancelling", target: fd[1] };
         }
         // Delete a poll
-        exp = new RegExp("Delete `" + str + "` Poll", "g");
+        exp = new RegExp("^Delete `" + str + "` Poll$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "poll", subtype: "deletion", target: fd[1] };
         }
         // Delete a poll
-        exp = new RegExp("Manipulate `" + str + "` Poll \\(" + targetType + " is `" + pollManipManipSubtype + "`\\)", "g");
+        exp = new RegExp("^Manipulate `" + str + "` Poll \\(" + targetType + " is `" + pollManipManipSubtype + "`\\)$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "poll", subtype: "manipulation", target: fd[1], manip_target: fd[2], manip_type: lc(fd[3]) };
         }
         /** ANNOUNCEMENTS **/
         // reveal
-        exp = new RegExp("Reveal " + targetType + " to " + locationType, "g");
+        exp = new RegExp("^Reveal " + targetType + " to " + locationType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "announcement", target: fd[2], info: fd[1] };
         }
         // reveal
-        exp = new RegExp("(Learn|Know) " + targetType, "g");
+        exp = new RegExp("^(Learn|Know) " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "announcement", target: "@Self", info: fd[2] };
         }
         /** ROLE CHANGE **/
         // role change
-        exp = new RegExp("Role Change " + targetType + " to " + targetType, "g");
+        exp = new RegExp("^Role Change " + targetType + " to " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "changing", subtype: "role", target: fd[1], change_to: fd[2] };
         }
         // alignment change
-        exp = new RegExp("Alignment Change " + targetType + " to " + targetType, "g");
+        exp = new RegExp("^Alignment Change " + targetType + " to " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "changing", subtype: "alignment", target: fd[1], change_to: fd[2] };
         }
         // group change
-        exp = new RegExp("Group Change " + targetType + " to " + targetType, "g");
+        exp = new RegExp("^Group Change " + targetType + " to " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "changing", subtype: "group", target: fd[1], change_to: fd[2] };
         }
         /** COPYING **/
         // copy abilities, target to self
-        exp = new RegExp("Copy " + targetType + attrDuration, "g");
+        exp = new RegExp("^Copy " + targetType + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "copying", subtype: "ability", target: fd[1], copy_to: "@Self", duration: dd(fd[2], "permanent") };
         }
         // copy abilities, target to target2
-        exp = new RegExp("Copy " + targetType + " to " + targetType + attrDuration, "g");
+        exp = new RegExp("^Copy " + targetType + " to " + targetType + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "copying", subtype: "ability", target: fd[1], copy_to: fd[2], duration: dd(fd[3], "permanent") };
         }
         // copy abilities, target to target
-        exp = new RegExp("Duplicate " + targetType + "'s abilities" + attrDuration, "g");
+        exp = new RegExp("^Duplicate " + targetType + "'s abilities" + attrDuration + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "copying", subtype: "ability", target: fd[1], copy_to: fd[1], duration: dd(fd[2], "permanent") };
         }
         // full copy
-        exp = new RegExp("Full Copy " + targetType, "g");
+        exp = new RegExp("^Full Copy " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "copying", subtype: "full", target: fd[1], copy_to: "@Self", suppressed: false, duration: dd(fd[2], "permanent") };
         }
         // full copy, surpressed
-        exp = new RegExp("Full Copy " + targetType + " (Suppressed)", "g");
+        exp = new RegExp("^Full Copy " + targetType + " \\(Suppressed\\)$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "copying", subtype: "full", target: fd[1], copy_to: "@Self", suppressed: true, duration: dd(fd[2], "permanent") };
@@ -614,134 +652,148 @@ function parseAbilities(trigger) {
         
         /** ASCEND DESCEND **/
         // ascend
-        exp = new RegExp("Ascend", "g");
+        exp = new RegExp("^Ascend$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "ascend" };
         }
         // descend
-        exp = new RegExp("Descend", "g");
+        exp = new RegExp("^Descend$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "descend" };
         }
         /** DISBAND **/
         // disband self
-        exp = new RegExp("Disband", "g");
+        exp = new RegExp("^Disband$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "disband", target: "@Self" };
         }
         // disband
-        exp = new RegExp("Disband " + targetType, "g");
+        exp = new RegExp("^Disband " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "disband", target: fd[1] };
         }
         /** COUNTING **/
         // increment self by 1
-        exp = new RegExp("Increment Counter", "g");
+        exp = new RegExp("^Increment Counter$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "counting", subtype: "increment", counter_value: 1, target: "@Self" };
         }
         // decrement self by 1
-        exp = new RegExp("Decrement Counter", "g");
+        exp = new RegExp("^Decrement Counter$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "counting", subtype: "decrement", counter_value: 1, target: "@Self" };
         }
         // increment self by value
-        exp = new RegExp("Increment Counter by " + num, "g");
+        exp = new RegExp("^Increment Counter by " + num + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "counting", subtype: "increment", counter_value: fd[1], target: "@Self" };
         }
         // decrement self by value
-        exp = new RegExp("Decrement Counter by " + num, "g");
+        exp = new RegExp("^Decrement Counter by " + num + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "counting", subtype: "decrement", counter_value: fd[1], target: "@Self" };
         }
         // set counter to value
-        exp = new RegExp("Set Counter to " + num, "g");
+        exp = new RegExp("^Set Counter to " + num + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "counting", subtype: "set", counter_value: fd[1], target: "@Self" };
         }
         // increment self by 1, for target
-        exp = new RegExp("Increment Counter for " + targetType, "g");
+        exp = new RegExp("^Increment Counter for " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "counting", subtype: "increment", counter_value: 1, target: fd[1] };
         }
         // decrement self by 1, for target
-        exp = new RegExp("Decrement Counter for " + targetType, "g");
+        exp = new RegExp("^Decrement Counter for " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "counting", subtype: "decrement", counter_value: 1, target: fd[1] };
         }
         // increment self by value, for target
-        exp = new RegExp("Increment Counter by " + num + " for " + targetType, "g");
+        exp = new RegExp("^Increment Counter by " + num + " for " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "counting", subtype: "increment", counter_value: fd[1], target: fd[2] };
         }
         // decrement self by value, for target
-        exp = new RegExp("Decrement Counter by " + num + " for " + targetType, "g");
+        exp = new RegExp("^Decrement Counter by " + num + " for " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "counting", subtype: "decrement", counter_value: fd[1], target: fd[2] };
         }
         // set counter to value, for target
-        exp = new RegExp("Set Counter to " + num + " for " + targetType, "g");
+        exp = new RegExp("^Set Counter to " + num + " for " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "counting", subtype: "set", counter_value: fd[1], target: fd[2] };
         }
         /** CONVERSATION RESET **/
         // conversation reset self
-        exp = new RegExp("Conversation Reset", "g");
+        exp = new RegExp("^Conversation Reset$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "reset", target: "@Self" };
         }
         // conversation reset target
-        exp = new RegExp("Conversation Reset " + targetType, "g");
+        exp = new RegExp("^Conversation Reset " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "reset", target: fd[1] };
         }
         /** CANCEL **/
         // cancel
-        exp = new RegExp("Cancel", "g");
+        exp = new RegExp("^Cancel$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "cancel", cancel_with: "Failure" };
         }
         // cancel with specific result
-        exp = new RegExp("Cancel with (Failure|Success|" + rawStr + ")", "g");
+        exp = new RegExp("^Cancel with (Failure|Success|" + rawStr + ")$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "cancel", cancel_with: fd[1] };
         }
         /** SWITCHING **/
         // switching
-        exp = new RegExp("Switch with " + targetType, "g");
+        exp = new RegExp("^Switch with " + targetType + "$", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "switching", target: fd[1] };
+        }
+        /** PROCESS/EVALUATE **/
+        // process
+        exp = new RegExp("^Process:$", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "process" };
+        }
+        // evaluate
+        exp = new RegExp("^Evaluate:$", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "evaluate" };
         }
         
         /** Ability Types End */
         if(ability) {
             //console.log("IDENT", ability);
-            trigger[1][a] = { ability: ability, parameters: { restrictions: parsedRestrictions, scaling: parsedScaling, direct: cDirect, repeating: cRepeating, visitless: cVisitless, forced: cForced, forced_sel: cForcedSelection } };
+            trigger[1][a] = { depth: (+bullets.indexOf(trigger[1][a].trim()[0])) + 1, ability: ability, parameters: { restrictions: parsedRestrictions, scaling: parsedScaling, direct: cDirect, repeating: cRepeating, visitless: cVisitless, forced: cForced, forced_sel: cForcedSelection } };
+            if(peCond) trigger[1][a].condition = peCond;
         } else if(abilityLine == "") {
-            trigger[1][a] = { ability: { type: "blank" }, parameters: { } };
+            trigger[1][a] = { depth: (+bullets.indexOf(trigger[1][a].trim()[0])) + 1, ability: { type: "blank" }, parameters: { } };
         } else {
             //console.log("UNIDENT", abilityLine);
-            trigger[1][a] = { ability: { type: "error" }, parameters : { failed_ability: trigger[1][a] } };
+            trigger[1][a] = { depth: (+bullets.indexOf(trigger[1][a].trim()[0])) + 1, ability: { type: "error" }, parameters : { failed_ability: trigger[1][a] } };
         }
     }
     return trigger;
@@ -861,4 +913,8 @@ function deepEqual(object1, object2) {
 
 function isObject(object) {
   return object != null && typeof object === 'object';
+}
+
+function deepCopy(el) {
+    return JSON.parse(JSON.stringify(el));
 }
