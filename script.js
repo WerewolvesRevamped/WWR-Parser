@@ -466,7 +466,6 @@ function parseAbilities(trigger) {
         if(fd) {
             ability = { type: "disband", target: fd[1] };
         }
-        
         /** COUNTING **/
         
         /** CONVERSATION RESET **/
@@ -482,7 +481,6 @@ function parseAbilities(trigger) {
         if(fd) {
             ability = { type: "reset", target: fd[1] };
         }
-        
         /** CANCEL **/
         // cancel
         exp = new RegExp("Cancel", "g");
@@ -496,8 +494,13 @@ function parseAbilities(trigger) {
         if(fd) {
             ability = { type: "cancel", cancel_with: fd[1] };
         }
-        
         /** SWITCHING **/
+        // switching
+        exp = new RegExp("Switch with " + targetType, "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "switching", target: fd[1] };
+        }
         
         
         
