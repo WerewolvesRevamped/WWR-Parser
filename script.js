@@ -1,4 +1,4 @@
-let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]\nImmediate Night: Manipulate @Self's `public voting power` to `2` (~NextDay)\nStarting: Manipulate @Self's `public voting power` to `-1`\nStarting: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\nStarting: Whisper to #Grandma's-House as `Grandma`\nStarting: Join #Bakers\nStarting: Join #Cult as `Owner`\nImmediate Night: Add @Selection to #Grandma's-House (~NextDay)\nImmediate Day: Grant `Fletcher's Customer` to @Selection\nImmediate: Revoke `Fletcher's Customer` from @Target [Quantity: 1]\nOn Death: Transfer `Journal Holder` from @Self to @Target\nPassive: Loyalty to `Hell` (Alignment)\nStarting: Obstruct Investigating for @Self\nStarting: Obstruct Role Investigating for @Self\nStarting: Obstruct Kill Killing for @Self ⇒ `Flute Player` (~Attribute)\nStarting: Obstruct Role Investigating for @Self ⇒ (0.6:`Flute Player`,0.4:`@Result`) (~Attribute)\nPassive Start Day: Obstruct @Self (~NextNight)\nOn Death: Add `Wolfpack` Poll\nImmediate Night: Manipulate `Lynch` Poll (@Selection is `Disqualified`) [Succession: No Target Succession]\nOn Killed: Delete `Wolfpack` Poll\nPassive Start Day: Create `Medium` Poll in #Medium-Question:@Self\nImmediate: Cancel `Lynch` Poll [Quantity: 1, Temporal: Night 2+]\nImmediate: Role Change @Selection to `Wolf`\nImmediate Night: Full Copy @Selection (Suppressed)\nImmediate: Ascend";
+let input = "Immediate Night: Role Investigate @Selection (SD, WD)\nImmediate Night: Attribute Investigate @Selection for `Enchanted` (SD, WD)\nImmediate: Investigate `Huntress` Count (WD)\nImmediate: Target @Selection (Player) \nImmediate: Target @Selection (Player) [Quantity: 1]\nOn Killed: [Condition: @Target exists]\n  • Process: Attack @Target\n  • Evaluate: @Result is `Success`: Reveal `Huntress @Self killed @Target` to #story_time\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection (~Persistent) [Temporal: Day 0] {Forced: Citizen}\nImmediate: End Night: Attack @Selection [Temporal: Night 2+, Quantity: 3]\nImmediate Day: Weakly Disguise @Self as @Selection [Temporal: Day 0] {Forced: Citizen}\nImmediate Night: Protect @Self from `Attacks` through Absence at @Selection\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Quantity: 1] ⟨x3⟩\nAfterwards: Protect @Self from `Attacks` (~Phase)\nImmediate Night: Protect @Selection from `Attacks` (~Phase) [Succession: No Target Succession] ⟨x1, $living>15 ⇒ x2⟩\nStarting: Apply `CureAvailable` to @Self\nStarting: Apply `Poisoned` to @Selection (~Persistent) (Inactive)\nPassive Start Day: Change `Poisoned` value `1` to `Active` for @(Attr:Poisoned:@Self)\nImmediate Night: Remove `Poisoned` from @Selection\nPassive: Redirect `non-killing abilities` from @(Attr:Wolfish) to @Target [Quantity: 1, Condition: @Target exists]\nPassive: Redirect `all` to @Target [Condition: @Target exists]\nImmediate Night: Manipulate @Self's `public voting power` to `2` (~NextDay)\nStarting: Manipulate @Self's `public voting power` to `-1`\nStarting: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\nStarting: Whisper to #Grandma's-House as `Grandma`\nStarting: Join #Bakers\nStarting: Join #Cult as `Owner`\nImmediate Night: Add @Selection to #Grandma's-House (~NextDay)\nImmediate Day: Grant `Fletcher's Customer` to @Selection\nImmediate: Revoke `Fletcher's Customer` from @Target [Quantity: 1]\nOn Death: Transfer `Journal Holder` from @Self to @Target\nPassive: Loyalty to `Hell` (Alignment)\nStarting: Obstruct Investigating for @Self\nStarting: Obstruct Role Investigating for @Self\nStarting: Obstruct Kill Killing for @Self ⇒ `Flute Player` (~Attribute)\nStarting: Obstruct Role Investigating for @Self ⇒ (0.6:`Flute Player`,0.4:`@Result`) (~Attribute)\nPassive Start Day: Obstruct @Self (~NextNight)\nOn Death: Add `Wolfpack` Poll\nImmediate Night: Manipulate `Lynch` Poll (@Selection is `Disqualified`) [Succession: No Target Succession]\nOn Killed: Delete `Wolfpack` Poll\nPassive Start Day: Create `Medium` Poll in #Medium-Question:@Self\nImmediate: Cancel `Lynch` Poll [Quantity: 1, Temporal: Night 2+]\nImmediate: Role Change @Selection to `Wolf`\nImmediate Night: Full Copy @Selection (Suppressed)\nImmediate: Ascend\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/20))⟩ [Condition: count(@(OrigRole:Flute Player)) is `>1`]";
 
 window.onload = (event) => {
     document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
@@ -82,13 +82,98 @@ const pollManipManipSubtype = "(Unvotable|Disqualified)";
 
 function parseAbilities(trigger) {
     for(let a in trigger[1]) {
-    let abilityLineSplit = trigger[1][a].split(/ \[| \{| ⟨/);
+        /**
+        Split Line
+        **/
+        let abilityLineSplit = trigger[1][a].split(/ \[| \{| ⟨/);
+        if(abilityLineSplit.length == 1) abilityLineSplit = trigger[1][a].split(/\[|\{|⟨/);
         let ability = null;
         let exp, fd;
         
         let abilityLine = abilityLineSplit.shift();
-        let abilityValues = trigger[1][a].split(abilityLine)[1];
+        let abilityValues = abilityLine.length > 0 ? trigger[1][a].split(abilityLine)[1] : trigger[1][a];
         console.log("VALUES: ", abilityValues);
+        
+        /**
+        Evaluate additional values
+        **/
+        let restrictions = abilityValues.match(/(?<=\[).+(?=\])/)?.[0]?.split(", ");
+        let compulsion = abilityValues.match(/(?<=\{).+(?=\})/)?.[0]?.split(", ");
+        let scaling = abilityValues.match(/(?<=\⟨).+(?=\⟩)/)?.[0]?.split(", ");
+        let parsedRestrictions = [];
+        let parsedScaling = [];
+        
+        for(let rest in restrictions) {
+            /** Temporal **/
+            // temporal, during
+            exp = new RegExp("^Temporal: (Day|Night) (\\d+)$", "g");
+            fd = exp.exec(restrictions[rest]);
+            if(fd) {
+                parsedRestrictions.push({ type: "temporal", subtype: "during", phase: phaseParse(fd[1], fd[2]) });
+            }
+            // temporal, after
+            exp = new RegExp("^Temporal: (Day|Night) (\\d+)\\+$", "g");
+            fd = exp.exec(restrictions[rest]);
+            if(fd) {
+                parsedRestrictions.push({ type: "temporal", subtype: "after", phase: phaseParse(fd[1], fd[2]) });
+            }
+            /** Attribute **/
+            // self has attribute
+            exp = new RegExp("^Attribute: has " + targetType + "$", "g");
+            fd = exp.exec(restrictions[rest]);
+            if(fd) {
+                parsedRestrictions.push({ type: "attribute", subtype: "has", target: "@Self", attribute: fd[1] });
+            }
+            // self lacks attribute
+            exp = new RegExp("^Attribute: lacks " + targetType + "$", "g");
+            fd = exp.exec(restrictions[rest]);
+            if(fd) {
+                parsedRestrictions.push({ type: "attribute", subtype: "lacks", target: "@Self", attribute: fd[1] });
+            }
+            // self has attribute
+            exp = new RegExp("^Attribute: " + targetType + " has " + targetType + "$", "g");
+            fd = exp.exec(restrictions[rest]);
+            if(fd) {
+                parsedRestrictions.push({ type: "attribute", subtype: "has", target: fd[1], attribute: fd[2] });
+            }
+            // self lacks attribute
+            exp = new RegExp("^Attribute: " + targetType + " lacks " + targetType + "$", "g");
+            fd = exp.exec(restrictions[rest]);
+            if(fd) {
+                parsedRestrictions.push({ type: "attribute", subtype: "lacks", target: fd[1], attribute: fd[2] });
+            }
+            /** Succession **/
+            // no succession
+            exp = new RegExp("^Succession: No Succession$", "g");
+            fd = exp.exec(restrictions[rest]);
+            if(fd) {
+                parsedRestrictions.push({ type: "succession", subtype: "default" });
+            }
+            // no target succession
+            exp = new RegExp("^Succession: No Target Succession$", "g");
+            fd = exp.exec(restrictions[rest]);
+            if(fd) {
+                parsedRestrictions.push({ type: "succession", subtype: "target" });
+            }
+            /** Quantity **/
+            // quantity
+            exp = new RegExp("^Quantity: (\\d+)$", "g");
+            fd = exp.exec(restrictions[rest]);
+            if(fd) {
+                parsedRestrictions.push({ type: "quantity", quantity: +fd[1] });
+            }
+            /** Condition **/
+            // condition
+            exp = new RegExp("^Condition: (.+)$", "g");
+            fd = exp.exec(restrictions[rest]);
+            if(fd) {
+                parsedRestrictions.push({ type: "condition", condition: fd[1] });
+            }
+        }
+        
+        /**
+        Evaluate Ability Types
+        **/
         
         /** KILLING **/
         exp = new RegExp("(Kill|Attack|Lynch|True Kill) " + targetType, "g");
@@ -567,7 +652,7 @@ function parseAbilities(trigger) {
         /** Ability Types End */
         if(ability) {
             console.log("IDENT", ability);
-            trigger[1][a] = ability;
+            trigger[1][a] = { ability: ability, parameters: { restrictions: parsedRestrictions, scaling: parsedScaling } };
         } else {
             console.log("UNIDENT", abilityLine);
         }
@@ -598,6 +683,11 @@ function lc(input) {
 // remove backticks + to lower case
 function rblc(input) {
     return rb(lc(input));
+}
+
+// parse phase
+function phaseParse(dn, num) {
+    return (dn == "Day" ? "D" : "N") + num;
 }
 
 function parseTriggers(inputLines) {
