@@ -60,7 +60,8 @@ const locationType = "(`[^`]*`|@\\S*|#\\S*)"; // extended version of target type
 const groupType = "(@\\S*|#\\S*)"; // reduced version of location type
 const attributeName = targetType;
 const num = "(-?\\d+)";
-const str = "([\\w\\s\\d@]+)";
+const rawStr = "[\\w\\s\\d@]+";
+const str = "(" + rawStr + ")";
 const decNum = "(-?\\d+\\.\\d+)";
 const abilityType = "(Killing|Investigating|Targeting|Disguising|Protecting|Applying|Redirecting|Vote Manipulating|Whispering|Joining|Granting|Loyalty|Obstructing|Poll Manipulating|Announcements|Changing|Copying|Choices|Ascend|Descend|Disband|Counting|Conversation Reset|Cancel|Switching)";
 const abilitySubtype = "((Kill|Attack|Lynch|True) Killing|(Role|Alignment|Category|Class|Count|Attribute) Investigating|(Target|Untarget) Targeting|() Disguising|(Absence|Active|Passive|Partial|Recruitment) Protecting|(Add|Remove|Change) Applying|() Redirecting|(Absolute|Relative) Vote Manipulating|() Whispering|(Add|Remove) Joining|(Add|Remove|Transfer) Granting|() Loyalty|() Obstructing|(Addition|Creation|Cancelling|Deletion|Manipulation) Poll Manipulating|() Announcements|(Role|Alignment|Group) Changing|(Ability|Full) Copying|(Creating|Choosing) Choices|() Ascend|() Descend|() Disband|() Counting|() Conversation Reset|() Cancel|() Switching)";
@@ -437,6 +438,8 @@ function parseAbilities(trigger) {
         }
         /** CHOICES **/
         
+        /** WIP - NEEDS DOING **/
+        
         /** ASCEND DESCEND **/
         // ascend
         exp = new RegExp("Ascend", "g");
@@ -467,13 +470,13 @@ function parseAbilities(trigger) {
         /** COUNTING **/
         
         /** CONVERSATION RESET **/
-        // disband self
+        // conversation reset self
         exp = new RegExp("Conversation Reset", "g");
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "reset", target: "@Self" };
         }
-        // disband
+        // conversation reset target
         exp = new RegExp("Conversation Reset " + targetType, "g");
         fd = exp.exec(abilityLine);
         if(fd) {
@@ -481,6 +484,18 @@ function parseAbilities(trigger) {
         }
         
         /** CANCEL **/
+        // cancel
+        exp = new RegExp("Cancel", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "cancel", cancel_with: "Failure" };
+        }
+        // cancel with specific result
+        exp = new RegExp("Cancel with (Failure|Success|" + rawStr + ")", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "cancel", cancel_with: fd[1] };
+        }
         
         /** SWITCHING **/
         
