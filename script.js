@@ -1,7 +1,11 @@
-let input = "Unique Role\nStarting:\n  • Whisper to #Grandma's-House as `Grandma`\n  • Manipulate @Self's `public voting power` to `0`\nImmediate Night:\n  • Manipulate @Self's `public voting power` to `2` (~NextDay)\n  • Add @Selection to #Grandma's-House (~NextDay)\n  • Add @SecondarySelection to #Grandma's-House (~NextDay)\n  • Evaluate:\n    ‣ @Selection->PublicVotingPower > `0`: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\n    ‣ Otherwise: Learn `@Selection could not be manipulated`\n  • Evaluate:\n    ‣ @SecondarySelection->PublicVotingPower > `0`: Manipulate @SecondarySelection's `public voting power` by `-1` (~NextDay)\n    ‣ Otherwise:  Learn `@SecondarySelection could not be manipulated`\nStarting: Whisper to #Enchanted as `Flute Player`\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/10))⟩ [Condition: count(@(OrigRole:Flute Player)) is `1`]\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/20))⟩ [Condition: count(@(OrigRole:Flute Player)) is `>1`]";
+//let firstInput = "Unique Role\nStarting:\n  • Whisper to #Grandma's-House as `Grandma`\n  • Manipulate @Self's `public voting power` to `0`\nImmediate Night:\n  • Manipulate @Self's `public voting power` to `2` (~NextDay)\n  • Add @Selection to #Grandma's-House (~NextDay)\n  • Add @SecondarySelection to #Grandma's-House (~NextDay)\n  • Evaluate:\n    ‣ @Selection->PublicVotingPower > `0`: Manipulate @Selection's `public voting power` by `-1` (~NextDay)\n    ‣ Otherwise: Learn `@Selection could not be manipulated`\n  • Evaluate:\n    ‣ @SecondarySelection->PublicVotingPower > `0`: Manipulate @SecondarySelection's `public voting power` by `-1` (~NextDay)\n    ‣ Otherwise:  Learn `@SecondarySelection could not be manipulated`\nStarting: Whisper to #Enchanted as `Flute Player`\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/10))⟩ [Condition: count(@(OrigRole:Flute Player)) is `1`]\nImmediate Night: Apply `Enchanted` to @Selection ⟨calc(round($total/20))⟩ [Condition: count(@(OrigRole:Flute Player)) is `>1`]";
 
 window.onload = (event) => {
-    document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
+    //roleTest(firstInput);
+};
+
+function roleTest(input) {
+    //document.getElementsByClassName("input")[0].innerHTML = "<pre>" + input + "</pre>";
     
     let abilityNames = abilitySubtype.substr(2, abilitySubtype.length - 3).split("|(").map(el => {
         let split = el.split(") ");
@@ -19,15 +23,8 @@ window.onload = (event) => {
     
     console.log(JSON.stringify(parsedRole));
     pretty = parsedRole.triggers.map(el => "<b>" + el.trigger + ":</b>\n\t" + (el.parameters?"<i>"+JSON.stringify(el.parameters)+"</i>\n\t":"") + el.abilities.map(el2 => { if(el2.sub_abilities) { let sa = el2.sub_abilities; delete el2.sub_abilities; return JSON.stringify(el2) + "\n\t\t" + sa.map(el3 => "<i>"+ el3.condition + "</i>\n\t\t" + JSON.stringify(el3.ability)).join("\n\t\t") } else { return JSON.stringify(el2); } }).join("\n\t") + "\n").join("");
-    document.getElementsByClassName("output")[0].innerHTML = "<pre>" + pretty + "</pre>"; 
-};
-
-
-
-
-let name = "";
-let unique = false;
-let triggers = [];
+    document.getElementsByClassName("output")[0].innerHTML = pretty.replace(/\n/g,"<br>").replace(/\t/g,"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"); 
+}
 
 let actionTimings = ["Start Night","End Night","Start Day","End Day","Immediate Night","Immediate Day","End Phase","Start Phase","Immediate"];
 let passiveTriggers = ["Passive", "Passive End Day", "Passive End Night", "Passive Start Day", "Passive Start Night", "Passive Start Phase", "Passive End Phase"];
@@ -834,6 +831,7 @@ function parseTriggers(inputLines) {
     let curTriggerType = null;
     let curTrigger = [];
     let unique = false;
+    let triggers = [];
 
     while(inputLines.length > 0) {
         let curInputLine = inputLines.shift().trim();

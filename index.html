@@ -5,13 +5,28 @@
 </head>
 <body>
 
-<div class="input">
-</div>
+<textarea class="input" style="width:100%;height:200px">Starting: Protect @Self from `Attacks` by @(Attr:Wolfish) through Passive Defense during Night (~UntilUse)
+On Passive Defense:
+  • @AttackSource is `Group:Wolfpack`: Reveal `@Self ran away` to #wolfpack
+  • Otherwise: Reveal `@Self ran away` to @Attacker
+</textarea><br>
+
+<button onclick="roleTest(document.getElementsByClassName('input')[0].value.replace(/<\/>/g,'~'))">Re-Evaluate</button>
 
 <br>
 
-<div class="output">
+<div class="output" style="overflow-wrap: break-word;">
 </div>
+
+<style>
+.output > pre {
+    overflow-wrap: break-word;
+    width: 100vw;
+    left:0;
+    right:0;margin: 0px -100%;
+padding: 0 100%;
+}
+</style>
 
 <br>
 
