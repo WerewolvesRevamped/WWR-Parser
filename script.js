@@ -23,7 +23,7 @@ function roleTest(input) {
     
     console.log(JSON.stringify(parsedRole));
     pretty = parsedRole.triggers.map(el => "<b>" + el.trigger + ":</b>\n\t" + (el.parameters?"<i>"+JSON.stringify(el.parameters)+"</i>\n\t":"") + el.abilities.map(el2 => { if(el2.sub_abilities) { let sa = el2.sub_abilities; delete el2.sub_abilities; return JSON.stringify(el2) + "\n\t\t" + sa.map(el3 => (el3.condition?"<i>"+ el3.condition + "</i>\n\t\t":"") + JSON.stringify(el3.ability)).join("\n\t\t") } else { return JSON.stringify(el2); } }).join("\n\t") + "\n").join("");
-    document.getElementsByClassName("output")[0].innerHTML = pretty.replace(/\n/g,"<br>").replace(/\t/g,"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"); 
+    document.getElementsByClassName("output")[0].innerHTML = (parsedRole.unique ? "<h3>Unique Role</h3>" : "") + pretty.replace(/\n/g,"<br>").replace(/\t/g,"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"); 
 }
 
 let actionTimings = ["Start Night","End Night","Start Day","End Day","Immediate Night","Immediate Day","End Phase","Start Phase","Immediate"];
@@ -137,7 +137,7 @@ function parseRole(inputLines) {
 
 /** REGEX - Reminder: You need double \'s here **/
 // general
-const targetType = "(`[^`]*`|@\\S*)";
+const targetType = "(`[^`]*`|@\\S*|%[^%]%)";
 const attrDuration = "( \\(~[^\)]+\\))?";
 const locationType = "(`[^`]*`|@\\S*|#\\S*)"; // extended version of target type
 const groupType = "(@\\S*|#\\S*)"; // reduced version of location type
@@ -146,8 +146,8 @@ const num = "(-?\\d+)";
 const rawStr = "[\\w\\s\\d@]+";
 const str = "(" + rawStr + ")";
 const decNum = "(-?\\d+\\.\\d+)";
-const abilityType = "(Killing|Investigating|Targeting|Disguising|Protecting|Applying|Redirecting|Vote Manipulating|Whispering|Joining|Granting|Loyalty|Obstructing|Poll Manipulating|Announcements|Changing|Copying|Choices|Ascend|Descend|Disband|Counting|Conversation Reset|Cancel|Switching)";
-const abilitySubtype = "((Kill|Attack|Lynch|True) Killing|(Role|Alignment|Category|Class|Count|Attribute) Investigating|(Target|Untarget) Targeting|() Disguising|(Absence|Active|Passive|Partial|Recruitment) Protecting|(Add|Remove|Change) Applying|() Redirecting|(Absolute|Relative) Vote Manipulating|() Whispering|(Add|Remove) Joining|(Add|Remove|Transfer) Granting|() Loyalty|() Obstructing|(Addition|Creation|Cancelling|Deletion|Manipulation) Poll Manipulating|() Announcements|(Role|Alignment|Group) Changing|(Ability|Full) Copying|(Creating|Choosing) Choices|() Ascend|() Descend|() Disband|(Increment|Decrement|Set) Counting|() Conversation Reset|() Cancel|() Switching)";
+const abilityType = "(Killing|Investigating|Targeting|Disguising|Protecting|Applying|Redirecting|Vote Manipulating|Whispering|Joining|Granting|Loyalty|Obstructing|Poll Manipulating|Announcements|Changing|Copying|Choices|Ascend|Descend|Disband|Counting|Conversation Reset|Cancel|Switching|Process|Evaluate|Action|Feedback)";
+const abilitySubtype = "((Kill|Attack|Lynch|True) Killing|(Role|Alignment|Category|Class|Count|Attribute) Investigating|(Target|Untarget) Targeting|() Disguising|(Absence|Active|Passive|Partial|Recruitment) Protecting|(Add|Remove|Change) Applying|() Redirecting|(Absolute|Relative) Vote Manipulating|() Whispering|(Add|Remove) Joining|(Add|Remove|Transfer) Granting|() Loyalty|() Obstructing|(Addition|Creation|Cancelling|Deletion|Manipulation) Poll Manipulating|() Announcements|(Role|Alignment|Group) Changing|(Ability|Full) Copying|(Creating|Choosing) Choices|() Ascend|() Descend|() Disband|(Increment|Decrement|Set) Counting|() Conversation Reset|() Cancel|() Switching|() Process|() Evaluate|() Action|() Feedback)";
 const bulletsRegex = /(•|‣|◦|·|⁃|⹀)/;
 
 // specific
@@ -864,7 +864,7 @@ function parseAbilities(trigger) {
 
 // parse the WD/SD affected element for invest abilities
 function parseInvestAffected(param) {
-    return { affected_by_wd: param.includes("WD"), affected_by_sd: param.includes("SD") };
+    return param ? { affected_by_wd: param.includes("WD"), affected_by_sd: param.includes("SD") } : { affected_by_wd: false, affected_by_sd: false };
 }
 
 // default duration: returns the default (def) if the duration (dur) is not set
