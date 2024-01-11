@@ -56,7 +56,7 @@ function parseRole(inputLines) {
         let peDepth = -1;
         let peIndex = null;
         for(const a in abilities[1]) {
-            if(abilities[1][a].ability.type == "process" || abilities[1][a].ability.type == "evaluate") {
+            if(abilities[1][a].ability.type == "evaluate") {
                 inPE = true;
                 peDepth = abilities[1][a].depth;
                 peIndex = a;
