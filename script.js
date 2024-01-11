@@ -39,6 +39,7 @@ function delParam(tr) {
 }
 
 function parseRole(inputLines) {
+    console.log("-=- S T A R T -=-");
     console.log("PARSE TRIGGERS");
     let triggers = parseTriggers(inputLines);
     console.log(JSON.stringify(triggers));
@@ -49,7 +50,7 @@ function parseRole(inputLines) {
     console.log("PARSE ABILITIES");
     for(let t in triggers.triggers) {
         let abilities = parseAbilities(triggers.triggers[t]); // parse abilities of a trigger
-        //console.log(JSON.stringify(abilities));
+        console.log("ABILITIES", JSON.stringify(abilities));
         /** Preprocessing **/
         /* Reformat P/E */
         let inPE = false;
@@ -57,6 +58,7 @@ function parseRole(inputLines) {
         let peIndex = null;
         let peType = null;
         for(const a in abilities[1]) {
+            // standard multine line P or E start
             if(abilities[1][a].ability.type == "process" || abilities[1][a].ability.type == "evaluate") {
                 inPE = true;
                 peDepth = abilities[1][a].depth;
@@ -65,14 +67,34 @@ function parseRole(inputLines) {
                 peType = abilities[1][a].ability.type;
                 continue;
             }
+            // P or E inline start
             if(!inPE && abilities[1][a].condition) {
                 inPE = true;
                 peDepth = abilities[1][a].depth - 1;
                 peIndex = a;
                 let dc = deepCopy(abilities[1][a]);
+                if(dc.condition == "Process") { // Inline Process
+                    abilities[1][a].ability = { type: "process", sub_abilities: [ {ability: dc.ability} ] };
+                    peType = "process";
+                    peDepth++;
+                } else { // Inline Evaluate
+                    abilities[1][a].ability = { type: "evaluate", sub_abilities: [ {ability: dc.ability, condition: dc.condition} ] };
+                    peType = "evaluate";
+                }
+                if(dc.ability.type == "action") abilities[1][a].ability.parameters = dc.parameters;
+                continue;
+            }
+            // switch from eval to inline process
+            if(inPE && peType == "process" && abilities[1][a].inline_eval) { 
+            console.log("SWITCH")
+                peDepth = abilities[1][a].depth - 1;
+                peIndex = a;
+                peType = "evaluate";
+                let dc = deepCopy(abilities[1][a]);
                 abilities[1][a].ability = { type: "evaluate", sub_abilities: [ {ability: dc.ability, condition: dc.condition} ] };
                 continue;
             }
+            // handle entries within PE
             if(inPE) {
                 if(abilities[1][a].depth > peDepth) {
                     let dc = deepCopy(abilities[1][a]);
@@ -104,7 +126,11 @@ function parseRole(inputLines) {
         } else {
             triggers.triggers[t] = { trigger: "error_invalid_parameters", abilities: [], error_data: { trigger: abilities[0], abilities: abilities[1] } };
         }
+        
+        triggers.triggers[t].abilities = triggers.triggers[t].abilities.filter(el => el.type != "action");
+        
     }
+    
     
     return triggers;
 }
@@ -150,13 +176,19 @@ function parseAbilities(trigger) {
         
         let abilityLine = abilityLineSplit.shift().replace(bulletsRegex,"").trim();
         let abilityValues = abilityLine.length > 0 ? trigger[1][a].split(abilityLine)[1] : trigger[1][a];
+        let isInlineEval = false;
         
         // check for P/E Condition
         let abilityLineSplitPE = abilityLine.split(": ");
         let peCond;
-        if(abilityLineSplitPE.length == 2) {
+        if(abilityLineSplitPE.length == 2) { // evaluate condition
             abilityLine = abilityLineSplitPE[1].trim();
             peCond = abilityLineSplitPE[0].trim();
+        }
+        if(abilityLineSplitPE.length == 3) { // inline evaluate
+            abilityLine = abilityLineSplitPE[2].trim();
+            peCond = abilityLineSplitPE[1].trim();
+            isInlineEval = true;
         }
         //console.log("VALUES: ", abilityValues);
         
@@ -289,6 +321,8 @@ function parseAbilities(trigger) {
                 parsedScaling.push({ type: "math_multiplier", quantity: fd[1] });
                 scalFound = true;
             }
+            /** DEFAULT **/
+            if(!scalFound) parsedScaling.push({ type: "error", error_scaling: scaling[scal] });
         }
         
         let cDirect = false;
@@ -801,17 +835,28 @@ function parseAbilities(trigger) {
         if(fd) {
             ability = { type: "feedback", feedback: fd[1] };
         }
+        /** ACTION VALUES */
+        // just values
+        exp = new RegExp("^Action:$", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "action" };
+        }
         
         /** Ability Types End */
         if(ability) {
             //console.log("IDENT", ability);
             trigger[1][a] = { depth: (+bullets.indexOf(trigger[1][a].trim()[0])) + 1, ability: ability, parameters: { restrictions: parsedRestrictions, scaling: parsedScaling, direct: cDirect, repeating: cRepeating, visitless: cVisitless, forced: cForced, forced_sel: cForcedSelection } };
             if(peCond) trigger[1][a].condition = peCond;
+            if(isInlineEval) {
+                trigger[1][a].condition = peCond;
+                trigger[1][a].inline_eval = true;
+            }
         } else if(abilityLine == "") {
             trigger[1][a] = { depth: (+bullets.indexOf(trigger[1][a].trim()[0])) + 1, ability: { type: "blank" }, parameters: { } };
         } else {
             //console.log("UNIDENT", abilityLine);
-            trigger[1][a] = { depth: (+bullets.indexOf(trigger[1][a].trim()[0])) + 1, ability: { type: "error" }, parameters : { failed_ability: trigger[1][a] } };
+            trigger[1][a] = { depth: (+bullets.indexOf(trigger[1][a].trim()[0])) + 1, ability: { type: "error" }, parameters : { failed_ability: trigger[1][a], failed_ability_line: "^" + abilityLine + "$" } };
         }
     }
     return trigger;
