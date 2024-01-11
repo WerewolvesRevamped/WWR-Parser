@@ -75,7 +75,7 @@ function parseRole(inputLines) {
                 if(abilities[1][a].depth > peDepth) {
                     let dc = deepCopy(abilities[1][a]);
                     if(dc.ability.type != "error") abilities[1][peIndex].ability.sub_abilities.push({ability: dc.ability, condition: dc.condition});
-                    else abilities[1][peIndex].ability.sub_abilities.push({ability: dc.ability, condition: dc});
+                    else abilities[1][peIndex].ability.sub_abilities.push({ability: dc.ability, condition: JSON.stringify(dc)});
                     abilities[1][a].ability.type = "blank";
                 } else {
                     inPE = false;
@@ -119,7 +119,7 @@ const abilitySubtype = "((Kill|Attack|Lynch|True) Killing|(Role|Alignment|Catego
 const bulletsRegex = /(•|‣|◦|·|⁃|⹀)/;
 
 // specific
-const investAffected = " ([\\(\\),SDWD ]*)?";
+const investAffected = "( [\\(\\),SDWD ]*)?";
 const defenseAttackSubtypes = "(Attacks|Kills|Lynches|Attacks & Lynches|All)";
 const defenseSubtypes = "(Absence at " + locationType + "|Active Defense|Passive Defense|Partial Defense|Recruitment Defense)";
 const defensePhases = "(Day|Night)";
@@ -787,6 +787,13 @@ function parseAbilities(trigger) {
         fd = exp.exec(abilityLine);
         if(fd) {
             ability = { type: "evaluate" };
+        }
+        /** FEEDBACK */
+        // just feedback
+        exp = new RegExp("^" + targetType + "$", "g");
+        fd = exp.exec(abilityLine);
+        if(fd) {
+            ability = { type: "feedback", feedback: fd[1] };
         }
         
         /** Ability Types End */
