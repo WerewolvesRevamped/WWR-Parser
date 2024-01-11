@@ -22,7 +22,7 @@ function roleTest(input) {
     let parsedRole = parseRole(inputLines);
     
     console.log(JSON.stringify(parsedRole));
-    pretty = parsedRole.triggers.map(el => "<b>" + el.trigger + ":</b>\n\t" + (el.parameters?"<i>"+JSON.stringify(el.parameters)+"</i>\n\t":"") + el.abilities.map(el2 => { if(el2.sub_abilities) { let sa = el2.sub_abilities; delete el2.sub_abilities; return JSON.stringify(el2) + "\n\t\t" + sa.map(el3 => "<i>"+ el3.condition + "</i>\n\t\t" + JSON.stringify(el3.ability)).join("\n\t\t") } else { return JSON.stringify(el2); } }).join("\n\t") + "\n").join("");
+    pretty = parsedRole.triggers.map(el => "<b>" + el.trigger + ":</b>\n\t" + (el.parameters?"<i>"+JSON.stringify(el.parameters)+"</i>\n\t":"") + el.abilities.map(el2 => { if(el2.sub_abilities) { let sa = el2.sub_abilities; delete el2.sub_abilities; return JSON.stringify(el2) + "\n\t\t" + sa.map(el3 => (el3.condition?"<i>"+ el3.condition + "</i>\n\t\t":"") + JSON.stringify(el3.ability)).join("\n\t\t") } else { return JSON.stringify(el2); } }).join("\n\t") + "\n").join("");
     document.getElementsByClassName("output")[0].innerHTML = pretty.replace(/\n/g,"<br>").replace(/\t/g,"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"); 
 }
 
@@ -55,12 +55,14 @@ function parseRole(inputLines) {
         let inPE = false;
         let peDepth = -1;
         let peIndex = null;
+        let peType = null;
         for(const a in abilities[1]) {
-            if(abilities[1][a].ability.type == "evaluate") {
+            if(abilities[1][a].ability.type == "process" || abilities[1][a].ability.type == "evaluate") {
                 inPE = true;
                 peDepth = abilities[1][a].depth;
                 peIndex = a;
                 abilities[1][a].ability.sub_abilities = [];
+                peType = abilities[1][a].ability.type;
                 continue;
             }
             if(!inPE && abilities[1][a].condition) {
@@ -74,8 +76,12 @@ function parseRole(inputLines) {
             if(inPE) {
                 if(abilities[1][a].depth > peDepth) {
                     let dc = deepCopy(abilities[1][a]);
-                    if(dc.ability.type != "error") abilities[1][peIndex].ability.sub_abilities.push({ability: dc.ability, condition: dc.condition});
-                    else abilities[1][peIndex].ability.sub_abilities.push({ability: dc.ability, condition: JSON.stringify(dc)});
+                    if(peType == "evaluate") {
+                        if(dc.ability.type != "error") abilities[1][peIndex].ability.sub_abilities.push({ability: dc.ability, condition: dc.condition});
+                        else abilities[1][peIndex].ability.sub_abilities.push({ability: dc.ability, condition: JSON.stringify(dc)});
+                    } else if(peType == "process") {
+                        abilities[1][peIndex].ability.sub_abilities.push({ability: dc.ability });
+                    }
                     abilities[1][a].ability.type = "blank";
                 } else {
                     inPE = false;
