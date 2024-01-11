@@ -63,6 +63,14 @@ function parseRole(inputLines) {
                 abilities[1][a].ability.sub_abilities = [];
                 continue;
             }
+            if(!inPE && abilities[1][a].condition) {
+                inPE = true;
+                peDepth = abilities[1][a].depth - 1;
+                peIndex = a;
+                let dc = deepCopy(abilities[1][a]);
+                abilities[1][a].ability = { type: "evaluate", sub_abilities: [ {ability: dc.ability, condition: dc.condition} ] };
+                continue;
+            }
             if(inPE) {
                 if(abilities[1][a].depth > peDepth) {
                     let dc = deepCopy(abilities[1][a]);
