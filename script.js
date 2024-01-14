@@ -21,10 +21,12 @@ function roleTest(input) {
     let inputLines = input.split("\n");
     let parsedRole = parseRole(inputLines);
     
-    console.log(JSON.stringify(parsedRole));
+    if(debugMode) console.log(JSON.stringify(parsedRole));
     pretty = parsedRole.triggers.map(el => "<b>" + el.trigger + ":</b>\n\t" + (el.parameters?"<i>"+JSON.stringify(el.parameters)+"</i>\n\t":"") + el.abilities.map(el2 => { if(el2.sub_abilities) { let sa = el2.sub_abilities; delete el2.sub_abilities; return JSON.stringify(el2) + "\n\t\t" + sa.map(el3 => (el3.condition?"<i>"+ el3.condition + "</i>\n\t\t":"") + JSON.stringify(el3.ability)).join("\n\t\t") } else { return JSON.stringify(el2); } }).join("\n\t") + "\n").join("");
     document.getElementsByClassName("output")[0].innerHTML = (parsedRole.unique ? "<h3>Unique Role</h3>" : "") + pretty.replace(/\n/g,"<br>").replace(/\t/g,"&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"); 
 }
+
+const debugMode = false;
 
 let actionTimings = ["Start Night","End Night","Start Day","End Day","Immediate Night","Immediate Day","End Phase","Start Phase","Immediate"];
 let passiveTriggers = ["Passive", "Passive End Day", "Passive End Night", "Passive Start Day", "Passive Start Night", "Passive Start Phase", "Passive End Phase"];
@@ -39,18 +41,18 @@ function delParam(tr) {
 }
 
 function parseRole(inputLines) {
-    console.log("-=- S T A R T -=-");
-    console.log("PARSE TRIGGERS");
+    if(debugMode) console.log("-=- S T A R T -=-");
+    if(debugMode) console.log("PARSE TRIGGERS");
     let triggers = parseTriggers(inputLines);
-    console.log(JSON.stringify(triggers));
+    if(debugMode) console.log(JSON.stringify(triggers));
     
     // get a default param for comparision
     const defaultParams = parseAbilities(["Immediate",["Disband"]])[1][0].parameters;
     
-    console.log("PARSE ABILITIES");
+    if(debugMode) console.log("PARSE ABILITIES");
     for(let t in triggers.triggers) {
         let abilities = parseAbilities(triggers.triggers[t]); // parse abilities of a trigger
-        console.log("ABILITIES", JSON.stringify(abilities));
+        if(debugMode) console.log("ABILITIES", JSON.stringify(abilities));
         /** Preprocessing **/
         /* Reformat P/E */
         let inPE = false;
@@ -124,7 +126,8 @@ function parseRole(inputLines) {
         else if(paramAbilities.length == 1 && !deepEqual(abilities[1][0], defaultParams)) {
             triggers.triggers[t] = { trigger: abilities[0], abilities: delParam(abilities[1]), parameters: abilities[1][0].parameters };
         } else {
-            triggers.triggers[t] = { trigger: "error_invalid_parameters", abilities: [], error_data: { trigger: abilities[0], abilities: abilities[1] } };
+            if(!debugMode) throw new Error(`Invalid Parameters \`${abilities[0]}\` and \`${abilities[1]}\``);
+            else triggers.triggers[t] = { trigger: "error_invalid_parameters", abilities: [], error_data: { trigger: abilities[0], abilities: abilities[1] } };
         }
         
         triggers.triggers[t].abilities = triggers.triggers[t].abilities.filter(el => el.type != "action");
@@ -202,18 +205,21 @@ function parseAbilities(trigger) {
         let parsedScaling = [];
         
         for(let rest in restrictions) {
+            let restFound = false;
             /** Temporal **/
             // temporal, during
             exp = new RegExp("^Temporal: (Day|Night) (\\d+)$", "g");
             fd = exp.exec(restrictions[rest]);
             if(fd) {
                 parsedRestrictions.push({ type: "temporal", subtype: "during", phase: phaseParse(fd[1], fd[2]) });
+                restFound = true;
             }
             // temporal, after
             exp = new RegExp("^Temporal: (Day|Night) (\\d+)\\+$", "g");
             fd = exp.exec(restrictions[rest]);
             if(fd) {
                 parsedRestrictions.push({ type: "temporal", subtype: "after", phase: phaseParse(fd[1], fd[2]) });
+                restFound = true;
             }
             /** Attribute **/
             // self has attribute
@@ -221,24 +227,28 @@ function parseAbilities(trigger) {
             fd = exp.exec(restrictions[rest]);
             if(fd) {
                 parsedRestrictions.push({ type: "attribute", subtype: "has", target: "@Self", attribute: fd[1] });
+                restFound = true;
             }
             // self lacks attribute
             exp = new RegExp("^Attribute: lacks " + targetType + "$", "g");
             fd = exp.exec(restrictions[rest]);
             if(fd) {
                 parsedRestrictions.push({ type: "attribute", subtype: "lacks", target: "@Self", attribute: fd[1] });
+                restFound = true;
             }
             // self has attribute
             exp = new RegExp("^Attribute: " + targetType + " has " + targetType + "$", "g");
             fd = exp.exec(restrictions[rest]);
             if(fd) {
                 parsedRestrictions.push({ type: "attribute", subtype: "has", target: fd[1], attribute: fd[2] });
+                restFound = true;
             }
             // self lacks attribute
             exp = new RegExp("^Attribute: " + targetType + " lacks " + targetType + "$", "g");
             fd = exp.exec(restrictions[rest]);
             if(fd) {
                 parsedRestrictions.push({ type: "attribute", subtype: "lacks", target: fd[1], attribute: fd[2] });
+                restFound = true;
             }
             /** Succession **/
             // no succession
@@ -246,12 +256,14 @@ function parseAbilities(trigger) {
             fd = exp.exec(restrictions[rest]);
             if(fd) {
                 parsedRestrictions.push({ type: "succession", subtype: "default" });
+                restFound = true;
             }
             // no target succession
             exp = new RegExp("^Succession: No Target Succession$", "g");
             fd = exp.exec(restrictions[rest]);
             if(fd) {
                 parsedRestrictions.push({ type: "succession", subtype: "target" });
+                restFound = true;
             }
             /** Quantity **/
             // quantity
@@ -259,6 +271,7 @@ function parseAbilities(trigger) {
             fd = exp.exec(restrictions[rest]);
             if(fd) {
                 parsedRestrictions.push({ type: "quantity", quantity: +fd[1] });
+                restFound = true;
             }
             /** Condition **/
             // condition
@@ -266,6 +279,12 @@ function parseAbilities(trigger) {
             fd = exp.exec(restrictions[rest]);
             if(fd) {
                 parsedRestrictions.push({ type: "condition", condition: fd[1] });
+                restFound = true;
+            }
+            /** DEFAULT **/
+            if(!restFound) {
+                if(!debugMode) throw new Error(`Invalid Restriction Type \`${restrictions[rest]}\``);
+                else parsedRestrictions.push({ type: "error", error_restriction: restrictions[rest] });
             }
         }
         
@@ -322,7 +341,10 @@ function parseAbilities(trigger) {
                 scalFound = true;
             }
             /** DEFAULT **/
-            if(!scalFound) parsedScaling.push({ type: "error", error_scaling: scaling[scal] });
+            if(!scalFound) {
+                if(!debugMode) throw new Error(`Invalid Scaling Type \`${scaling[scal]}\``);
+                else parsedScaling.push({ type: "error", error_scaling: scaling[scal] });
+            }
         }
         
         let cDirect = false;
@@ -338,6 +360,9 @@ function parseAbilities(trigger) {
             else if(compulsion[comp].substr(0, 6) == "Forced") {
                 cForced = true;
                 cForcedSelection = compulsion[comp].substr(7);
+            }
+            else {
+                if(!debugMode) throw new Error(`Invalid Compulsion Type \`${compulsion[comp]}\``);
             }
         }
         
@@ -856,7 +881,8 @@ function parseAbilities(trigger) {
             trigger[1][a] = { depth: (+bullets.indexOf(trigger[1][a].trim()[0])) + 1, ability: { type: "blank" }, parameters: { } };
         } else {
             //console.log("UNIDENT", abilityLine);
-            trigger[1][a] = { depth: (+bullets.indexOf(trigger[1][a].trim()[0])) + 1, ability: { type: "error" }, parameters : { failed_ability: trigger[1][a], failed_ability_line: "^" + abilityLine + "$" } };
+            if(!debugMode) throw new Error(`Invalid Ability Type \`${trigger[1][a]}\` with ability line \`${abilityLine}\``);
+            else trigger[1][a] = { depth: (+bullets.indexOf(trigger[1][a].trim()[0])) + 1, ability: { type: "error" }, parameters : { failed_ability: trigger[1][a], failed_ability_line: "^" + abilityLine + "$" } };
         }
     }
     return trigger;
@@ -901,15 +927,16 @@ function parseTriggers(inputLines) {
 
     while(inputLines.length > 0) {
         let curInputLine = inputLines.shift().trim();
+        if(!curInputLine) continue;
         
         // continue previous trigger
         if(bullets.includes(curInputLine[0])) {
-            console.log("CONT: ", curInputLine);
+            if(debugMode) console.log("CONT: ", curInputLine);
             curTrigger.push(curInputLine)
         }
         // start new trigger
         else {
-            console.log("NEW: ", curInputLine);
+            if(debugMode) console.log("NEW: ", curInputLine);
             // store previous trigger if existing
             if(curTriggerType) {
                 triggers.push([curTriggerType, curTrigger]);
@@ -934,7 +961,8 @@ function parseTriggers(inputLines) {
                 curTriggerType = curTriggerName;
                 curTrigger.push(curInputLineSplit.join(": "));
             } else {
-                console.log("UNIDENT");
+                if(!debugMode) throw new Error(`Invalid Trigger Type \`${curTriggerName}\` in \`${curInputLine}\``);
+                else console.log("UNIDENT");
             }
             
             // TODO advanced trigger type
